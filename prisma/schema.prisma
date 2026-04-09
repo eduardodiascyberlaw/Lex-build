@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH & PERFIL ───
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  cpOA         String
+  firmName     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  apiKeyEnc String?
+  model     String   @default("claude-sonnet-4-20250514")
+
+  templates Template[]
+  pecas     Peca[]
+  userNotes UserNote[]
+  styleRefs StyleReference[]
+  role      UserRole @default(USER)
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model Template {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  s3Key     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ─── PEÇAS PROCESSUAIS ───
+
+model Peca {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  type         PecaType
+  status       PecaStatus
+  currentPhase Int        @default(0)
+  templateId   String?
+  caseData     Json?
+  model        String
+  outputS3Key  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  uploads  PecaUpload[]
+  phases   Phase[]
+  messages Message[]
+}
+
+enum PecaType {
+  ACPAD
+  CAUTELAR
+}
+
+enum PecaStatus {
+  DRAFT
+  PHASE_0_ACTIVE
+  PHASE_0_APPROVED
+  PHASE_1_ACTIVE
+  PHASE_1_APPROVED
+  PHASE_2_ACTIVE
+  PHASE_2_APPROVED
+  PHASE_3_ACTIVE
+  PHASE_3_APPROVED
+  PHASE_3_SKIPPED
+  PHASE_4_ACTIVE
+  PHASE_4_APPROVED
+  PHASE_5_ACTIVE
+  PHASE_5_APPROVED
+  GENERATING_DOCX
+  COMPLETED
+  ERROR
+}
+
+model PecaUpload {
+  id          String   @id @default(cuid())
+  pecaId      String
+  peca        Peca     @relation(fields: [pecaId], references: [id])
+  filename    String
+  s3Key       String
+  mimeType    String
+  textContent String?  @db.Text
+  createdAt   DateTime @default(now())
+}
+
+model Phase {
+  id              String      @id @default(cuid())
+  pecaId          String
+  peca            Peca        @relation(fields: [pecaId], references: [id])
+  number          Int
+  status          PhaseStatus
+  content         String?     @db.Text
+  originalContent String?     @db.Text
+  editedByUser    Boolean     @default(false)
+  tokenInput      Int?
+  tokenOutput     Int?
+  startedAt       DateTime?
+  approvedAt      DateTime?
+}
+
+enum PhaseStatus {
+  PENDING
+  ACTIVE
+  APPROVED
+  SKIPPED
+  REJECTED
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  pecaId    String
+  peca      Peca     @relation(fields: [pecaId], references: [id])
+  phase     Int
+  role      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+// ─── BASE DE CONHECIMENTO JURÍDICO ───
+
+model ThematicModule {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  name        String
+  description String?    @db.Text
+  pecaTypes   PecaType[]
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  legislation   ModuleLegislation[]
+  jurisprudence ModuleJurisprudence[]
+  doctrine      ModuleDoctrine[]
+  platformNotes PlatformNote[]
+  userNotes     UserNote[]
+  coreRefs      ModuleCoreRef[]
+}
+
+model Legislation {
+  id        String           @id @default(cuid())
+  diploma   String
+  article   String
+  epigraph  String?
+  content   String           @db.Text
+  scope     LegislationScope
+  isActive  Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  moduleLinks ModuleLegislation[]
+  coreRefs    ModuleCoreRef[]
+}
+
+enum LegislationScope {
+  CORE
+  MODULE
+}
+
+model ModuleLegislation {
+  id            String         @id @default(cuid())
+  moduleId      String
+  module        ThematicModule @relation(fields: [moduleId], references: [id])
+  legislationId String
+  legislation   Legislation    @relation(fields: [legislationId], references: [id])
+  relevance     String?        @db.Text
+
+  @@unique([moduleId, legislationId])
+}
+
+model ModuleCoreRef {
+  id            String         @id @default(cuid())
+  moduleId      String
+  module        ThematicModule @relation(fields: [moduleId], references: [id])
+  legislationId String
+  legislation   Legislation    @relation(fields: [legislationId], references: [id])
+  context       String?        @db.Text
+
+  @@unique([moduleId, legislationId])
+}
+
+model ModuleJurisprudence {
+  id         String         @id @default(cuid())
+  moduleId   String
+  module     ThematicModule @relation(fields: [moduleId], references: [id])
+  court      String
+  caseNumber String
+  date       String
+  summary    String         @db.Text
+  keyPassage String?        @db.Text
+  tags       String[]
+  isActive   Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model ModuleDoctrine {
+  id        String         @id @default(cuid())
+  moduleId  String
+  module    ThematicModule @relation(fields: [moduleId], references: [id])
+  author    String
+  work      String
+  passage   String         @db.Text
+  page      String?
+  year      Int?
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model PlatformNote {
+  id        String         @id @default(cuid())
+  moduleId  String
+  module    ThematicModule @relation(fields: [moduleId], references: [id])
+  content   String         @db.Text
+  category  NoteCategory   @default(GENERAL)
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model UserNote {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  moduleId  String
+  module    ThematicModule @relation(fields: [moduleId], references: [id])
+  content   String         @db.Text
+  category  NoteCategory   @default(GENERAL)
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+enum NoteCategory {
+  GENERAL
+  TRIBUNAL_SPECIFIC
+  PROCEDURAL
+  STRATEGIC
+}
+
+// ─── REFERÊNCIAS DE ESTILO ───
+
+model StyleReference {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  pecaType       PecaType
+  section        StyleSection
+  beforeText     String       @db.Text
+  afterText      String       @db.Text
+  notes          String?      @db.Text
+  isGoldStandard Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  sourcePecaId   String?
+  sourcePhase    Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum StyleSection {
+  PRESSUPOSTOS
+  FACTOS
+  TEMPESTIVIDADE
+  DIREITO
+  PEDIDOS
+}

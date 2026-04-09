@@ -1,0 +1,155 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { createLogger } from "@/lib/logger";
+import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
+
+const logger = createLogger("api-peca-approve");
+
+const approveSchema = z.object({
+  editedContent: z.string().optional(),
+  saveAsStyleRef: z.boolean().default(false),
+  styleRefNotes: z.string().optional(),
+});
+
+// Phase number → next status mapping
+const PHASE_TRANSITIONS: Record<number, { approved: string; next: string; nextPhase: number }> = {
+  0: { approved: "PHASE_0_APPROVED", next: "PHASE_1_ACTIVE", nextPhase: 1 },
+  1: { approved: "PHASE_1_APPROVED", next: "PHASE_2_ACTIVE", nextPhase: 2 },
+  2: { approved: "PHASE_2_APPROVED", next: "PHASE_3_ACTIVE", nextPhase: 3 },
+  3: { approved: "PHASE_3_APPROVED", next: "PHASE_4_ACTIVE", nextPhase: 4 },
+  4: { approved: "PHASE_4_APPROVED", next: "PHASE_5_ACTIVE", nextPhase: 5 },
+  5: { approved: "PHASE_5_APPROVED", next: "GENERATING_DOCX", nextPhase: 5 },
+};
+
+const PHASE_TO_STYLE_SECTION: Record<number, string> = {
+  1: "PRESSUPOSTOS",
+  2: "FACTOS",
+  3: "TEMPESTIVIDADE",
+  4: "DIREITO",
+  5: "PEDIDOS",
+};
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+
+  const data = await parseBody(req, approveSchema);
+  if (data instanceof NextResponse) return data;
+
+  try {
+    const peca = await prisma.peca.findFirst({
+      where: { id, userId: auth.user.id },
+      select: { id: true, type: true, currentPhase: true, status: true, caseData: true },
+    });
+
+    if (!peca) {
+      return errorResponse("Não encontrado", 404, "NOT_FOUND");
+    }
+
+    const currentPhase = peca.currentPhase;
+    const transition = PHASE_TRANSITIONS[currentPhase];
+
+    if (!transition) {
+      return errorResponse("Fase inválida para aprovação", 400, "INVALID_PHASE");
+    }
+
+    const phase = await prisma.phase.findFirst({
+      where: { pecaId: id, number: currentPhase, status: "ACTIVE" },
+    });
+
+    if (!phase) {
+      return errorResponse("Fase não está ativa", 400, "PHASE_NOT_ACTIVE");
+    }
+
+    const isEdited = !!data.editedContent;
+    const finalContent = data.editedContent ?? phase.content;
+
+    await prisma.$transaction(async (tx) => {
+      // Approve current phase
+      await tx.phase.update({
+        where: { id: phase.id },
+        data: {
+          status: "APPROVED",
+          content: finalContent,
+          originalContent: isEdited ? phase.content : undefined,
+          editedByUser: isEdited,
+          approvedAt: new Date(),
+        },
+      });
+
+      // Save style reference if requested
+      if (data.saveAsStyleRef && isEdited && phase.content) {
+        const section = PHASE_TO_STYLE_SECTION[currentPhase];
+        if (section) {
+          await tx.styleReference.create({
+            data: {
+              userId: auth.user.id,
+              pecaType: peca.type,
+              section: section as
+                | "PRESSUPOSTOS"
+                | "FACTOS"
+                | "TEMPESTIVIDADE"
+                | "DIREITO"
+                | "PEDIDOS",
+              beforeText: phase.content,
+              afterText: finalContent!,
+              notes: data.styleRefNotes,
+              sourcePecaId: id,
+              sourcePhase: currentPhase,
+            },
+          });
+        }
+      }
+
+      // Handle Phase 3 skip if tempestividade not active
+      let nextStatus = transition.next;
+      let nextPhase = transition.nextPhase;
+
+      if (currentPhase === 2) {
+        const caseData = peca.caseData as Record<string, unknown> | null;
+        if (!caseData?.tempestividade_ativa) {
+          // Skip phase 3
+          await tx.phase.create({
+            data: { pecaId: id, number: 3, status: "SKIPPED" },
+          });
+          nextStatus = "PHASE_4_ACTIVE";
+          nextPhase = 4;
+        }
+      }
+
+      // Create next phase if not final
+      if (currentPhase < 5) {
+        await tx.phase.create({
+          data: {
+            pecaId: id,
+            number: nextPhase,
+            status: "ACTIVE",
+            startedAt: new Date(),
+          },
+        });
+      }
+
+      // Update peca status
+      await tx.peca.update({
+        where: { id },
+        data: {
+          status: nextStatus as never,
+          currentPhase: nextPhase,
+        },
+      });
+    });
+
+    logger.info(
+      { userId: auth.user.id, pecaId: id, phase: currentPhase, edited: isEdited },
+      "Phase approved"
+    );
+
+    return NextResponse.json({ success: true, nextPhase: transition.nextPhase });
+  } catch (err) {
+    logger.error({ err, pecaId: id }, "Failed to approve phase");
+    return errorResponse("Erro interno", 500, "INTERNAL_ERROR");
+  }
+}
