@@ -17,11 +17,14 @@ interface AppSidebarProps {
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/settings", label: "Definições" },
+  { href: "/settings/notes", label: "Notas" },
+  { href: "/settings/style", label: "Estilo" },
 ];
 
 const adminItems = [
   { href: "/admin/modules", label: "Módulos" },
   { href: "/admin/legislation", label: "Legislação" },
+  { href: "/admin/style-references", label: "Refs Estilo" },
 ];
 
 export function AppSidebar({ user }: AppSidebarProps) {

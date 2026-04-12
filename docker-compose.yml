@@ -1,0 +1,37 @@
+services:
+  lexbuild:
+    build: .
+    container_name: lexbuild
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env.production
+    depends_on:
+      minio:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./knowledge:/app/knowledge:ro
+
+  minio:
+    image: minio/minio:latest
+    container_name: lexbuild-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    env_file:
+      - .env.production
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  minio-data:

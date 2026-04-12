@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { PipelineSidebar } from "@/components/peca/pipeline-sidebar";
 import { PhaseChat } from "@/components/peca/phase-chat";
 import { ApprovalBar } from "@/components/peca/approval-bar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface Phase {
   id: string;
@@ -32,7 +33,6 @@ interface Message {
 
 export default function PecaPage() {
   const params = useParams();
-  const router = useRouter();
   const pecaId = params.id as string;
 
   const [peca, setPeca] = useState<PecaDetail | null>(null);
@@ -105,8 +105,29 @@ export default function PecaPage() {
         </div>
 
         {isCompleted && (
-          <div className="rounded-md bg-green-50 p-4 text-green-800">
-            Peça concluída. O .docx será disponibilizado para download.
+          <div className="rounded-md bg-green-50 p-4 text-green-800 space-y-3">
+            <p>Peca concluida.</p>
+            {(peca as PecaDetail & { outputS3Key?: string }).outputS3Key && (
+              <a href={`/api/pecas/${pecaId}/download`} className="inline-block">
+                <Button>Download .docx</Button>
+              </a>
+            )}
+          </div>
+        )}
+
+        {peca.status === "GENERATING_DOCX" && (
+          <div className="rounded-md bg-yellow-50 p-4 text-yellow-800 space-y-3">
+            <p>A gerar documento .docx...</p>
+            <Button
+              onClick={async () => {
+                await fetch(`/api/pecas/${pecaId}/generate`, {
+                  method: "POST",
+                });
+                loadPeca();
+              }}
+            >
+              Gerar DOCX
+            </Button>
           </div>
         )}
 

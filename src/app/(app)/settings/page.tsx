@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { TemplateUpload } from "@/components/settings/template-upload";
 
 interface Profile {
   id: string;
@@ -221,9 +222,7 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Upload de templates será disponibilizado após configuração do MinIO.
-          </p>
+          <TemplateUpload />
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
@@ -14,7 +14,7 @@ const chatSchema = z.object({
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
-  if (auth instanceof Response) return auth;
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
 

@@ -79,7 +79,8 @@ async function loadCoreLegislation(): Promise<string> {
 async function loadModuleContent(
   moduleCodes: string[],
   includeJurisprudence: boolean,
-  includeDoctrine: boolean
+  includeDoctrine: boolean,
+  userId?: string
 ): Promise<string> {
   if (moduleCodes.length === 0) return "";
 
@@ -93,6 +94,7 @@ async function loadModuleContent(
       jurisprudence: includeJurisprudence ? { where: { isActive: true } } : false,
       doctrine: includeDoctrine ? { where: { isActive: true } } : false,
       platformNotes: { where: { isActive: true } },
+      userNotes: userId ? { where: { userId, isActive: true } } : false,
       coreRefs: { include: { legislation: true } },
     },
   });
@@ -151,6 +153,14 @@ async function loadModuleContent(
     if (mod.platformNotes.length > 0) {
       block += `### Notas práticas\n`;
       for (const n of mod.platformNotes) {
+        block += `${n.content}\n\n`;
+      }
+    }
+
+    // User-specific notes
+    if (mod.userNotes && mod.userNotes.length > 0) {
+      block += `### As suas notas pessoais\n`;
+      for (const n of mod.userNotes) {
         block += `${n.content}\n\n`;
       }
     }
@@ -231,7 +241,7 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
       const antiAi = await loadKnowledgeFile("anti-ai-review.md");
       const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
       // Modules: legislation + notes only (no jurisprudence/doctrine)
-      const moduleContent = await loadModuleContent(activeModules, false, false);
+      const moduleContent = await loadModuleContent(activeModules, false, false, userId);
       systemParts.push(agent, antiAi, styleRefs);
 
       userParts.push(`## Documentos\n\n${documentsText}`);
@@ -269,7 +279,7 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
       const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
       const coreLeg = await loadCoreLegislation();
       // Full module content: legislation + jurisprudence + doctrine + notes
-      const moduleContent = await loadModuleContent(activeModules, true, true);
+      const moduleContent = await loadModuleContent(activeModules, true, true, userId);
       systemParts.push(agent, antiAi, styleRefs);
 
       userParts.push(`## Documentos\n\n${documentsText}`);
