@@ -34,7 +34,7 @@ function formatTime(dateStr: string | null): string {
 }
 
 export function PipelineState({ peca }: PipelineStateProps) {
-  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR");
+  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO");
   // Build phase 0-5 array with fallback for phases not yet created
   const phaseMap = new Map(peca.phases.map((p) => [p.number, p]));
 

@@ -5,14 +5,15 @@ import path from "path";
 
 const logger = createLogger("context-engine");
 
-function getKnowledgeDir(pecaType: "ACPAD" | "CAUTELAR"): string {
-  const subdir = pecaType === "CAUTELAR" ? "cautelar" : "acpad";
+function getKnowledgeDir(pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"): string {
+  const subdir =
+    pecaType === "CAUTELAR" ? "cautelar" : pecaType === "EXECUCAO" ? "execucao" : "acpad";
   return path.join(process.cwd(), "knowledge", subdir);
 }
 
 async function loadKnowledgeFile(
   filename: string,
-  pecaType: "ACPAD" | "CAUTELAR" = "ACPAD"
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
 ): Promise<string> {
   try {
     return await readFile(path.join(getKnowledgeDir(pecaType), filename), "utf-8");
@@ -27,7 +28,7 @@ async function loadKnowledgeFile(
  */
 async function loadStyleRefs(
   userId: string,
-  pecaType: "ACPAD" | "CAUTELAR",
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO",
   section: string
 ): Promise<string> {
   const refs = await prisma.styleReference.findMany({
@@ -178,7 +179,7 @@ async function loadModuleContent(
 export interface ContextEngineInput {
   pecaId: string;
   userId: string;
-  pecaType: "ACPAD" | "CAUTELAR";
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO";
   phase: number;
   caseData: Record<string, unknown> | null;
   documentsText: string;
@@ -321,6 +322,151 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
         if (previousOutputs[4]) userParts.push(`## Secção DO DIREITO\n\n${previousOutputs[4]}`);
         userParts.push(
           `\nRedige a secção "DOS PEDIDOS" com pedidos cautelares, prova e valor da causa.`
+        );
+        break;
+      }
+
+      default:
+        logger.error({ phase, pecaType }, "Unknown phase number");
+        throw new Error(`Unknown phase: ${phase}`);
+    }
+  } else if (pecaType === "EXECUCAO") {
+    switch (phase) {
+      case 0: {
+        const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md", pecaType);
+        systemParts.push(phase0Instructions);
+
+        const allModules = await prisma.thematicModule.findMany({
+          where: { isActive: true, pecaTypes: { has: pecaType } },
+          select: { code: true, name: true, description: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        let catalog = `\n## Catálogo de módulos temáticos disponíveis\n\n`;
+        for (const m of allModules) {
+          catalog += `- **${m.code}** — ${m.name}: ${m.description ?? ""}\n`;
+        }
+        systemParts.push(catalog);
+        userParts.push(`## Documentos do caso\n\n${documentsText}`);
+        break;
+      }
+
+      case 1: {
+        // EXECUCAO PHASE 1 — Sentença Exequenda (agents/sentenca-exequenda.md)
+        const agent = await loadKnowledgeFile("agents/sentenca-exequenda.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        userParts.push(`\nRedige a Secção I — DA SENTENÇA EXEQUENDA em articulados numerados.`);
+        break;
+      }
+
+      case 2: {
+        // EXECUCAO PHASE 2 — Incumprimento (agents/incumprimento.md)
+        const agent = await loadKnowledgeFile("agents/incumprimento.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
+        const moduleContent = await loadModuleContent(activeModules, false, false, userId);
+
+        // Conditional refs
+        const refParts: string[] = [];
+        if (activeModules.includes("sis-indicacao")) {
+          refParts.push(await loadKnowledgeFile("references/sis-aima.md", pecaType));
+        }
+
+        systemParts.push(agent, antiAi, styleRefs, ...refParts.filter(Boolean));
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Secção I — DA SENTENÇA EXEQUENDA (aprovada)\n\n${previousOutputs[1]}`);
+        if (moduleContent) userParts.push(moduleContent);
+        userParts.push(
+          `\nRedige a Secção II — DO INCUMPRIMENTO em articulados numerados, continuando a numeração.`
+        );
+        break;
+      }
+
+      case 3: {
+        // EXECUCAO skips phase 3 — safety return
+        break;
+      }
+
+      case 4: {
+        // EXECUCAO PHASE 4 — Direito (agents/direito.md)
+        const agent = await loadKnowledgeFile("agents/direito.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
+        const coreLeg = await loadCoreLegislation();
+        const moduleContent = await loadModuleContent(activeModules, true, true, userId);
+
+        // Always load regime-execucao-cpta and jurisprudencia-execucao
+        const regimeRef = await loadKnowledgeFile("references/regime-execucao-cpta.md", pecaType);
+        const jurisRef = await loadKnowledgeFile("references/jurisprudencia-execucao.md", pecaType);
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Secção I — Sentença Exequenda\n\n${previousOutputs[1]}`);
+        if (previousOutputs[2])
+          userParts.push(`## Secção II — Incumprimento\n\n${previousOutputs[2]}`);
+        if (coreLeg) userParts.push(coreLeg);
+        if (moduleContent) userParts.push(moduleContent);
+        if (regimeRef) userParts.push(`## Referência: Regime de execução CPTA\n\n${regimeRef}`);
+        if (jurisRef) userParts.push(`## Referência: Jurisprudência de execução\n\n${jurisRef}`);
+
+        // Conditional references based on modulos_direito
+        const modulosDireito = (caseData?.modulos_direito as string[]) ?? [];
+        if (modulosDireito.includes("M3")) {
+          const sancaoRef = await loadKnowledgeFile("references/sancao-pecuniaria.md", pecaType);
+          if (sancaoRef)
+            userParts.push(`## Referência: Sanção pecuniária compulsória\n\n${sancaoRef}`);
+        }
+        if (modulosDireito.includes("M4")) {
+          const tutelaRef = await loadKnowledgeFile("references/tutela-jurisdicional.md", pecaType);
+          if (tutelaRef)
+            userParts.push(`## Referência: Tutela jurisdicional efectiva\n\n${tutelaRef}`);
+        }
+        if (modulosDireito.includes("M5")) {
+          const causaRef = await loadKnowledgeFile(
+            "references/causa-legitima-inexecucao.md",
+            pecaType
+          );
+          if (causaRef)
+            userParts.push(`## Referência: Causa legítima de inexecução\n\n${causaRef}`);
+        }
+
+        userParts.push(`\nRedige a Secção III — DO DIREITO, continuando a numeração.`);
+        break;
+      }
+
+      case 5: {
+        // EXECUCAO PHASE 5 — Pedidos (agents/pedidos.md)
+        const agent = await loadKnowledgeFile("agents/pedidos.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "PEDIDOS");
+        systemParts.push(agent, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Secção I — Sentença Exequenda\n\n${previousOutputs[1]}`);
+        if (previousOutputs[2])
+          userParts.push(`## Secção II — Incumprimento\n\n${previousOutputs[2]}`);
+        if (previousOutputs[4]) userParts.push(`## Secção III — Direito\n\n${previousOutputs[4]}`);
+
+        // Sancao pecuniaria ref for pedidos if M3 active
+        const modulosDireito = (caseData?.modulos_direito as string[]) ?? [];
+        if (modulosDireito.includes("M3")) {
+          const sancaoRef = await loadKnowledgeFile("references/sancao-pecuniaria.md", pecaType);
+          if (sancaoRef)
+            userParts.push(`## Referência: Sanção pecuniária compulsória\n\n${sancaoRef}`);
+        }
+
+        userParts.push(
+          `\nRedige a Secção IV — DO PEDIDO com pedidos, lista de documentos, data e assinatura.`
         );
         break;
       }

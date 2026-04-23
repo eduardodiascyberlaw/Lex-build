@@ -37,7 +37,7 @@ function formatTime(dateStr: string | null): string {
 }
 
 export function TabPipeline({ peca, onApproved }: TabPipelineProps) {
-  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR");
+  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO");
   const [expandedPhase, setExpandedPhase] = useState<number | null>(peca.currentPhase);
   const phaseMap = new Map(peca.phases.map((p) => [p.number, p]));
 

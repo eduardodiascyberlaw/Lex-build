@@ -9,7 +9,7 @@ const logger = createLogger("admin-modules-code");
 const updateModuleSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  pecaTypes: z.array(z.enum(["ACPAD", "CAUTELAR"])).optional(),
+  pecaTypes: z.array(z.enum(["ACPAD", "CAUTELAR", "EXECUCAO"])).optional(),
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
 });

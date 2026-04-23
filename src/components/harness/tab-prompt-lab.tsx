@@ -26,7 +26,7 @@ function estimateTokens(text: string): number {
 }
 
 export function TabPromptLab({ peca }: TabPromptLabProps) {
-  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR");
+  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO");
   const [selectedPhase, setSelectedPhase] = useState(peca.currentPhase);
   const [promptData, setPromptData] = useState<PromptData | null>(null);
   const [loading, setLoading] = useState(false);

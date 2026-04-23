@@ -19,6 +19,13 @@ const CAUTELAR_SCRIPT_PATH = join(
   "scripts",
   "gerar_docx.py"
 );
+const EXECUCAO_SCRIPT_PATH = join(
+  process.cwd(),
+  "knowledge",
+  "execucao",
+  "scripts",
+  "gerar_execucao.py"
+);
 
 interface DocxInput {
   pecaId: string;
@@ -51,6 +58,11 @@ export async function generateDocx(input: DocxInput): Promise<string> {
   // Dispatch CAUTELAR to dedicated generator
   if (peca.type === "CAUTELAR") {
     return generateCautelarDocx(pecaId, userId);
+  }
+
+  // Dispatch EXECUCAO to dedicated generator
+  if (peca.type === "EXECUCAO") {
+    return generateExecucaoDocx(pecaId, userId);
   }
 
   const caseData = peca.caseData as Record<string, unknown> | null;
@@ -281,6 +293,110 @@ async function generateCautelarDocx(pecaId: string, userId: string): Promise<str
       data: { status: "ERROR" },
     });
     logger.error({ err, pecaId }, "CAUTELAR DOCX generation failed");
+    throw err;
+  } finally {
+    try {
+      await unlink(jsonPath).catch(() => {});
+      await unlink(outputPath).catch(() => {});
+      const { rmdir } = await import("fs/promises");
+      await rmdir(tempDir).catch(() => {});
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+}
+
+/**
+ * Generate the final .docx for a completed EXECUCAO peca.
+ *
+ * Uses built-in template (no user template needed).
+ * Phases: 1=sentenca_exequenda, 2=incumprimento, 4=direito, 5=pedidos (phase 3 skipped).
+ */
+async function generateExecucaoDocx(pecaId: string, userId: string): Promise<string> {
+  const peca = await prisma.peca.findFirstOrThrow({
+    where: { id: pecaId, userId },
+    include: {
+      phases: { where: { status: "APPROVED" }, orderBy: { number: "asc" } },
+      user: { select: { name: true, cpOA: true } },
+    },
+  });
+
+  const caseData = peca.caseData as Record<string, unknown> | null;
+  if (!caseData) {
+    throw new Error("Peca has no caseData (Phase 0 not completed)");
+  }
+
+  const phaseContent: Record<number, string> = {};
+  for (const phase of peca.phases) {
+    if (phase.content) {
+      phaseContent[phase.number] = phase.content;
+    }
+  }
+
+  const sentenca_exequenda = parseArticles(phaseContent[1] ?? "");
+  const incumprimento = parseArticles(phaseContent[2] ?? "");
+  const direito = parseArticles(phaseContent[4] ?? "");
+
+  const docxData = {
+    tribunal: (caseData.tribunal as string) ?? "Tribunal Administrativo e Fiscal de Lisboa",
+    processo: (caseData.processo as string) ?? "",
+    exequente: caseData.exequente ?? { nome: "EXEQUENTE", descricao: "" },
+    tipo_requerimento: "EXECUÇÃO DE SENTENÇA",
+    sentenca_exequenda,
+    incumprimento,
+    direito,
+    pedidos_abertura:
+      (caseData.pedidos_abertura as string) ?? "Termos em que requer a V. Exa. se digne:",
+    pedidos: parsePedidos(phaseContent[5] ?? ""),
+    documentos: (caseData.documentos as string[]) ?? [],
+    data: formatDate(),
+    advogado_nome: peca.user.name ?? "Eduardo S Dias",
+    advogado_cp: peca.user.cpOA ?? "CP 59368P OA",
+  };
+
+  const tempDir = join(tmpdir(), `lexbuild-${randomUUID()}`);
+  await mkdir(tempDir, { recursive: true });
+
+  const jsonPath = join(tempDir, "dados.json");
+  const outputPath = join(tempDir, "execucao_final.docx");
+
+  try {
+    await writeFile(jsonPath, JSON.stringify(docxData, null, 2), "utf-8");
+
+    // EXECUCAO uses built-in template — no user template download needed
+    const { stdout, stderr } = await execFileAsync(
+      "python3",
+      [EXECUCAO_SCRIPT_PATH, "--json", jsonPath, "--output", outputPath],
+      { timeout: 30000 }
+    );
+
+    if (stderr) {
+      logger.warn({ stderr }, "gerar_execucao.py stderr");
+    }
+    logger.info({ stdout: stdout.trim() }, "EXECUCAO DOCX generated");
+
+    const { readFile } = await import("fs/promises");
+    const docxBuffer = await readFile(outputPath);
+    const s3Key = await uploadToS3(
+      docxBuffer,
+      `execucao_${pecaId}.docx`,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      `pecas/${pecaId}`
+    );
+
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { outputS3Key: s3Key, status: "COMPLETED" },
+    });
+
+    logger.info({ pecaId, s3Key }, "EXECUCAO DOCX uploaded and peca completed");
+    return s3Key;
+  } catch (err) {
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { status: "ERROR" },
+    });
+    logger.error({ err, pecaId }, "EXECUCAO DOCX generation failed");
     throw err;
   } finally {
     try {

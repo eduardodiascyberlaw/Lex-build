@@ -10,7 +10,7 @@ const modules = [
     name: "Indicação SIS",
     description:
       "Módulo para casos envolvendo inserção no Sistema de Informação Schengen (SIS). Regulamentos UE 2018/1860 e 2018/1861.",
-    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
+    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const, "EXECUCAO" as const],
     sortOrder: 1,
   },
   {
@@ -18,7 +18,7 @@ const modules = [
     name: "Abandono voluntário / NAV",
     description:
       "Módulo para casos de abandono voluntário do território e notificação para abandono voluntário (NAV). Lei 23/2007 art. 138.º e seguintes.",
-    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
+    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const, "EXECUCAO" as const],
     sortOrder: 2,
   },
   {
@@ -42,7 +42,7 @@ const modules = [
     name: "Integração socioprofissional",
     description:
       "Módulo para casos em que o requerente demonstra integração social e profissional em Portugal. Lei 23/2007.",
-    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
+    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const, "EXECUCAO" as const],
     sortOrder: 5,
   },
   {
@@ -50,7 +50,7 @@ const modules = [
     name: "Menor nacional português",
     description:
       "Módulo para casos envolvendo progenitor de menor com nacionalidade portuguesa. Direito de residência derivado do direito da UE. TFUE art. 20.º, Lei 23/2007 art. 134.º.",
-    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
+    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const, "EXECUCAO" as const],
     sortOrder: 6,
   },
   {
@@ -58,7 +58,7 @@ const modules = [
     name: "Proporcionalidade / art. 8.º CEDH",
     description:
       "Módulo para invocação do princípio da proporcionalidade e direito ao respeito pela vida privada e familiar. CEDH art. 8.º, CPA art. 7.º, CRP art. 18.º.",
-    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
+    pecaTypes: ["ACPAD" as const, "CAUTELAR" as const, "EXECUCAO" as const],
     sortOrder: 7,
   },
   {
@@ -76,6 +76,22 @@ const modules = [
       "Módulo para casos em que a AIMA indefere por falta de meios de subsistência, exigindo ilegalmente que provenham da atividade profissional subordinada. Tese: cômputo por referência ao agregado familiar (art. 2.º, n.º 2 Portaria 1563/2007). Validada pela sentença TAF Loulé proc. 247/26.0BELLE-A (21.04.2026).",
     pecaTypes: ["ACPAD" as const, "CAUTELAR" as const],
     sortOrder: 9,
+  },
+  {
+    code: "sancao-pecuniaria",
+    name: "Sanção pecuniária compulsória",
+    description:
+      "Art. 169.º CPTA — sanção coerciva diária por incumprimento de sentença. Natureza coerciva, não indemnizatória.",
+    pecaTypes: ["EXECUCAO" as const],
+    sortOrder: 10,
+  },
+  {
+    code: "causa-legitima-inexecucao",
+    name: "Causa legítima de inexecução",
+    description:
+      "Art. 163.º CPTA — defesa preventiva contra invocação de impossibilidade absoluta pela Executada.",
+    pecaTypes: ["EXECUCAO" as const],
+    sortOrder: 11,
   },
 ];
 

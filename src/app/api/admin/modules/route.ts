@@ -10,7 +10,7 @@ const createModuleSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
-  pecaTypes: z.array(z.enum(["ACPAD", "CAUTELAR"])),
+  pecaTypes: z.array(z.enum(["ACPAD", "CAUTELAR", "EXECUCAO"])),
   sortOrder: z.number().int().default(0),
 });
 

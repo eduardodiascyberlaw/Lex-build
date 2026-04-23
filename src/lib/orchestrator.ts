@@ -31,8 +31,19 @@ const CAUTELAR_STYLE_SECTIONS: Record<number, string> = {
   5: "PEDIDOS",
 };
 
-export function getPhaseToStyleSection(pecaType: "ACPAD" | "CAUTELAR"): Record<number, string> {
-  return pecaType === "CAUTELAR" ? CAUTELAR_STYLE_SECTIONS : ACPAD_STYLE_SECTIONS;
+const EXECUCAO_STYLE_SECTIONS: Record<number, string> = {
+  1: "FACTOS",
+  2: "FACTOS",
+  4: "DIREITO",
+  5: "PEDIDOS",
+};
+
+export function getPhaseToStyleSection(
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"
+): Record<number, string> {
+  if (pecaType === "CAUTELAR") return CAUTELAR_STYLE_SECTIONS;
+  if (pecaType === "EXECUCAO") return EXECUCAO_STYLE_SECTIONS;
+  return ACPAD_STYLE_SECTIONS;
 }
 
 const ACPAD_PHASE_NAMES: Record<number, string> = {
@@ -53,8 +64,19 @@ const CAUTELAR_PHASE_NAMES: Record<number, string> = {
   5: "Pedidos, prova e valor",
 };
 
-export function getPhaseNames(pecaType: "ACPAD" | "CAUTELAR"): Record<number, string> {
-  return pecaType === "CAUTELAR" ? CAUTELAR_PHASE_NAMES : ACPAD_PHASE_NAMES;
+const EXECUCAO_PHASE_NAMES: Record<number, string> = {
+  0: "Análise documental",
+  1: "Sentença exequenda",
+  2: "Incumprimento",
+  3: "—",
+  4: "Direito — fundamentos",
+  5: "Pedidos e documentos",
+};
+
+export function getPhaseNames(pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"): Record<number, string> {
+  if (pecaType === "CAUTELAR") return CAUTELAR_PHASE_NAMES;
+  if (pecaType === "EXECUCAO") return EXECUCAO_PHASE_NAMES;
+  return ACPAD_PHASE_NAMES;
 }
 
 // Backwards-compatible export for components that don't have pecaType yet
@@ -76,7 +98,7 @@ export function getTransition(phase: number): PhaseTransition | null {
 export function getNextPhase(
   currentPhase: number,
   caseData: Record<string, unknown> | null,
-  pecaType: "ACPAD" | "CAUTELAR" = "ACPAD"
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
 ): { nextStatus: string; nextPhase: number; skippedPhases: number[] } {
   const transition = PHASE_TRANSITIONS[currentPhase];
   if (!transition) {
@@ -101,6 +123,14 @@ export function getNextPhase(
       nextPhase = 4;
       logger.info("Phase 3 skipped (CAUTELAR — no tempestividade)");
     }
+  } else if (pecaType === "EXECUCAO") {
+    // EXECUCAO: Phase 2 → always skip phase 3, go to phase 4
+    if (currentPhase === 2) {
+      skippedPhases.push(3);
+      nextStatus = "PHASE_4_ACTIVE";
+      nextPhase = 4;
+      logger.info("Phase 3 skipped (EXECUCAO — no tempestividade)");
+    }
   } else {
     // ACPAD: Phase 2 → check if Phase 3 should be skipped
     if (currentPhase === 2 && !caseData?.tempestividade_ativa) {
@@ -120,10 +150,13 @@ export function getNextPhase(
 export function shouldSkipPhase(
   phase: number,
   caseData: Record<string, unknown> | null,
-  pecaType: "ACPAD" | "CAUTELAR" = "ACPAD"
+  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
 ): boolean {
   if (pecaType === "CAUTELAR") {
     return phase === 1 || phase === 3;
+  }
+  if (pecaType === "EXECUCAO") {
+    return phase === 3;
   }
   if (phase === 3 && !caseData?.tempestividade_ativa) {
     return true;

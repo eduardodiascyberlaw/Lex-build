@@ -44,6 +44,12 @@ export default async function DashboardPage() {
           description="Suspensão de eficácia de ato administrativo. 3 fases: facto, direito, pedidos."
           available
         />
+        <PecaTypeCard
+          type="EXECUCAO"
+          title="Execução de Sentença"
+          description="Requerimento de execução de sentença administrativa. Arts. 157.º-179.º CPTA."
+          available
+        />
       </div>
 
       {recentPecas.length > 0 && (

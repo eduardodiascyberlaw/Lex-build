@@ -57,7 +57,7 @@ export async function GET(
     const { systemPrompt, userPrompt } = await buildContext({
       pecaId: id,
       userId: auth.user.id,
-      pecaType: peca.type as "ACPAD" | "CAUTELAR",
+      pecaType: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO",
       phase,
       caseData: peca.caseData as Record<string, unknown> | null,
       documentsText,

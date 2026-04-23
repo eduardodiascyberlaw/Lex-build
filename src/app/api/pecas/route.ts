@@ -7,7 +7,7 @@ import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
 const logger = createLogger("api-pecas");
 
 const createPecaSchema = z.object({
-  type: z.enum(["ACPAD", "CAUTELAR"]),
+  type: z.enum(["ACPAD", "CAUTELAR", "EXECUCAO"]),
   templateId: z.string().optional(),
 });
 
