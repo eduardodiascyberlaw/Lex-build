@@ -80,6 +80,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         },
       });
 
+      // Phase 0: extract caseData JSON from content
+      if (currentPhase === 0 && finalContent) {
+        const jsonMatch = finalContent.match(/```json\s*\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          try {
+            const caseData = JSON.parse(jsonMatch[1]);
+            await tx.peca.update({
+              where: { id },
+              data: { caseData },
+            });
+            logger.info({ pecaId: id }, "caseData extracted from Phase 0");
+          } catch (parseErr) {
+            logger.warn({ parseErr, pecaId: id }, "Failed to parse caseData JSON from Phase 0");
+          }
+        }
+      }
+
       // Save style reference if requested
       if (data.saveAsStyleRef && isEdited && phase.content) {
         const section = PHASE_TO_STYLE_SECTION[currentPhase];

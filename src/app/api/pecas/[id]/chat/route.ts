@@ -135,13 +135,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           },
         });
 
-        // If Phase 0, also update phase content (latest response)
-        if (currentPhase === 0) {
-          await prisma.phase.updateMany({
-            where: { pecaId: id, number: 0, status: "ACTIVE" },
-            data: { content: fullContent },
-          });
-        }
+        // Update phase content with latest assistant response
+        await prisma.phase.updateMany({
+          where: { pecaId: id, number: currentPhase, status: "ACTIVE" },
+          data: { content: fullContent },
+        });
 
         // Update token usage if available
         const stats = result.value;
