@@ -209,7 +209,12 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
     switch (phase) {
       case 0: {
         const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md", pecaType);
+        const playbookRef = await loadKnowledgeFile(
+          "references/playbook-indeferimento-nav.md",
+          pecaType
+        );
         systemParts.push(phase0Instructions);
+        if (playbookRef) systemParts.push(playbookRef);
 
         const allModules = await prisma.thematicModule.findMany({
           where: { isActive: true, pecaTypes: { has: pecaType } },
@@ -251,6 +256,11 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
         ) {
           refParts.push(await loadKnowledgeFile("references/proporcionalidade.md", pecaType));
         }
+        if (activeModules.includes("meios-subsistencia-agregado")) {
+          refParts.push(
+            await loadKnowledgeFile("references/meios-subsistencia-agregado.md", pecaType)
+          );
+        }
 
         systemParts.push(agent, antiAi, styleRefs, ...refParts.filter(Boolean));
 
@@ -272,6 +282,13 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
         const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
         const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
         const jurisRef = await loadKnowledgeFile("references/jurisprudencia.md", pecaType);
+        const playbookRef = await loadKnowledgeFile(
+          "references/playbook-indeferimento-nav.md",
+          pecaType
+        );
+        const meiosRef = activeModules.includes("meios-subsistencia-agregado")
+          ? await loadKnowledgeFile("references/meios-subsistencia-agregado.md", pecaType)
+          : "";
         const coreLeg = await loadCoreLegislation();
         const moduleContent = await loadModuleContent(activeModules, true, true, userId);
         systemParts.push(agent, antiAi, styleRefs);
@@ -282,6 +299,9 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
           userParts.push(`## Secção DOS FACTOS (aprovada)\n\n${previousOutputs[2]}`);
         if (coreLeg) userParts.push(coreLeg);
         if (moduleContent) userParts.push(moduleContent);
+        if (meiosRef)
+          userParts.push(`## Referência: Meios de subsistência por agregado\n\n${meiosRef}`);
+        if (playbookRef) userParts.push(`## Referência: Playbook estratégico\n\n${playbookRef}`);
         if (jurisRef) userParts.push(`## Referência: Jurisprudência citável\n\n${jurisRef}`);
         userParts.push(
           `\nRedige a secção "DO DIREITO" com os 3 pilares (fumus, periculum, ponderação).`

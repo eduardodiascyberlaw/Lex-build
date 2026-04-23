@@ -491,6 +491,353 @@ execução imediata."
 
 ---
 
+### Acórdão proc. 293/25.0BEBJA.CS1
+
+**Tribunal:** TCA Sul
+**Data:** 20 de novembro de 2025
+**Tema:** Instrumentalidade da suspensão de eficácia do indeferimento AIMA
+
+**Sumário útil:**
+
+> A suspensão de eficácia do ato de indeferimento possibilita a permanência regular
+> durante a pendência da ação principal, ao abrigo da manifestação de interesse (art. 88.º
+> Lei 23/2007), obstando à necessidade de cumprimento da NAV e à instauração do
+> procedimento coercivo.
+
+**Argumentos para os quais se cita:**
+
+- Principal para refutar rejeição liminar por falta de instrumentalidade
+- A cautelar evita que a anulação ocorra após afastamento executado
+
+**Fórmula de citação sugerida:**
+"Com efeito, o TCA Sul, no acórdão proferido no processo n.º 293/25.0BEBJA.CS1,
+de 20 de novembro de 2025, fixou que «a suspensão de eficácia do ato de indeferimento
+possibilita a permanência regular durante a pendência da ação principal, ao abrigo
+da manifestação de interesse (art. 88.º Lei 23/2007), obstando à necessidade de
+cumprimento da NAV e à instauração do procedimento coercivo»."
+
+---
+
+### Acórdão proc. 309/25.0BEFUN.CS1
+
+**Tribunal:** TCA Sul
+**Data:** 22 de janeiro de 2026
+**Tema:** Ato negativo com efeitos positivos — admissibilidade da suspensão de eficácia
+
+**Citação verbatim (ratio decidendi):**
+
+> «Embora o acto de indeferimento do pedido de autorização de residência seja um acto
+> negativo, não é um acto puramente negativo, na medida em que afecta o status quo
+> anterior, alterando a situação jurídica do requerente, ao sujeitá-lo a notificação
+> para abandonar o território nacional, pelo que é admissível a suspensão da sua
+> eficácia.»
+
+**Argumentos para os quais se cita:**
+
+- Citação doutrinária central — refuta a tese AIMA de ato puramente negativo
+- Instrumentalidade da suspensão de eficácia em indeferimento com NAV
+- Superação da objeção liminar ex art. 116.º/2/d CPTA
+
+**Fórmula de citação sugerida:**
+"Como consignou o TCA Sul, no acórdão de 22 de janeiro de 2026 (Proc. n.º
+309/25.0BEFUN.CS1), «embora o acto de indeferimento do pedido de autorização de
+residência seja um acto negativo, não é um acto puramente negativo, na medida em que
+afecta o status quo anterior, alterando a situação jurídica do requerente, ao
+sujeitá-lo a notificação para abandonar o território nacional, pelo que é admissível
+a suspensão da sua eficácia»."
+
+---
+
+### Acórdão proc. 397/25.0BEPNF
+
+**Tribunal:** TCA Sul
+**Data:** 6 de fevereiro de 2026
+**Tema:** Periculum in mora — detenção como dano juridicamente relevante
+
+**Citação verbatim:**
+
+> «Atenta a relação causal entre o acto de indeferimento da autorização de residência
+> e a possibilidade de detenção por órgão policial, após o prazo fixado para abandono
+> voluntário, a possibilidade de ser detido num centro de instalação temporária, a
+> qualquer momento, por uma força policial, e assim, ser privado de se poder movimentar
+> em liberdade e segurança terá muito provavelmente, de acordo com as regras do senso
+> comum, consequências graves na sua esfera jurídica, designadamente a nível psicológico,
+> emocional, familiar e profissional.»
+
+**Argumentos para os quais se cita:**
+
+- Fundamenta periculum independentemente de alegações adicionais de lesão familiar
+- Detenção policial gera consequências a múltiplos níveis (psicológico, emocional,
+  familiar, profissional) — todas juridicamente relevantes
+- Refuta contra-argumento AIMA de que consequências económicas não são prejuízos
+  juridicamente relevantes
+
+**Fórmula de citação sugerida:**
+"O TCA Sul, no acórdão de 6 de fevereiro de 2026 (Proc. n.º 397/25.0BEPNF), fixou que
+«atenta a relação causal entre o acto de indeferimento da autorização de residência e a
+possibilidade de detenção por órgão policial, após o prazo fixado para abandono
+voluntário, a possibilidade de ser detido num centro de instalação temporária (…) terá
+muito provavelmente, de acordo com as regras do senso comum, consequências graves na
+sua esfera jurídica, designadamente a nível psicológico, emocional, familiar e
+profissional»."
+
+---
+
+### Acórdão proc. 48807/25.8BELSB.CS1
+
+**Tribunal:** TCA Sul
+**Data:** 5 de fevereiro de 2026
+**Tema:** Periculum in mora — mesmo sentido do 397/25
+
+**Argumentos para os quais se cita:**
+
+- Reforço do periculum — citar em paralelo com proc. 397/25.0BEPNF
+- Detenção iminente como prejuízo de difícil reparação
+
+**Fórmula de citação sugerida:**
+"No mesmo sentido, o TCA Sul, no acórdão de 5 de fevereiro de 2026 (Proc. n.º
+48807/25.8BELSB.CS1)."
+
+---
+
+### Acórdão proc. 348/22.3BELRS
+
+**Tribunal:** TCA Sul
+**Data:** 19 de maio de 2022
+**Tema:** Interesse em agir cautelar — caracterização geral
+
+**Sumário útil:**
+
+> Previamente à constatação da existência do periculum in mora, impõe-se verificar se
+> existe ou é patente um mínimo de utilidade e de adequação do recurso à própria via
+> cautelar.
+
+**Argumentos para os quais se cita:**
+
+- Caracterização geral do interesse em agir cautelar
+- Suporte dogmático para a subsecção de instrumentalidade/necessidade
+
+**Fórmula de citação sugerida:**
+"Como consignou o TCA Sul, no acórdão de 19 de maio de 2022 (Proc. n.º
+348/22.3BELRS), «previamente à constatação da existência do periculum in mora,
+impõe-se verificar se existe ou é patente um mínimo de utilidade e de adequação do
+recurso à própria via cautelar»."
+
+---
+
+## TAF — Primeira instância (decisões-modelo)
+
+### Sentença proc. 240/26.2BESNT
+
+**Tribunal:** TAF Sintra, Juízo Administrativo Comum
+**Data:** 17 de abril de 2026
+**Juíza:** Filipa Vilar (regime de estágio)
+**Decisão:** Procedência integral da providência cautelar
+
+**Valor didático:** Aplicação sistemática e exaustiva dos quatro eixos argumentativos
+(instrumentalidade, fumus, periculum, ponderação). Modelo de estrutura de fundamentação
+para cautelares contra indeferimento AIMA com NAV.
+
+> **ALERTA:** Decisão de juíza estagiária — verificar trânsito em julgado antes de citar
+> como referência consolidada. Usar preferencialmente como modelo estrutural interno, não
+> como autoridade jurisprudencial.
+
+---
+
+### Saneador-Sentença proc. 247/26.0BELLE-A / 247/26.0BELLE
+
+**Tribunal:** TAF Loulé, Unidade Orgânica 1
+**Data:** 21 de abril de 2026
+**Juiz:** Carlos Sérgio Madureira Rodrigues
+**Decisão:** Procedência total da ACPAD — condenação da AIMA a reapreciar o pedido
+considerando o agregado familiar
+**Via processual:** Conhecimento imediato do mérito da principal em sede cautelar
+(art. 121.º/1 CPTA), dado por prejudicado o pedido cautelar
+
+**Tema:** Meios de subsistência — AIMA não pode exigir origem subordinada; cômputo
+por agregado familiar; omissão de pronúncia sobre termo de responsabilidade
+
+**Citações verbatim (ratio decidendi):**
+
+Sobre a criação de requisito sem base legal:
+
+> «não estando em causa um requisito específico da concessão de autorização de
+> residência para exercício de atividade profissional subordinada, temos que a Requerida
+> retira da lei o desenvolvimento de um requisito que da mesma não consta. Por outras
+> palavras, se, com efeito, o/a Requerente deve fazer prova da posse dos meios de
+> subsistência (art. 116.º do CPA) cujo critério de determinação é efetuado por referência
+> à retribuição mínima mensal garantida nos termos do n.º 1 do artigo 266.º do Código do
+> Trabalho (…) ponto é que nada obsta a que tal determinação seja feita por referência ao
+> agregado familiar.»
+
+Sobre a disponibilidade vs. origem dos meios (art. 7.º Portaria):
+
+> «aqui está prevista uma disponibilidade / possibilidade para adquirir os meios de
+> subsistência (v.g., disponibilidade / possibilidade para exercer atividade profissional
+> subordinada) e não, reitere-se, que os meios de subsistência propriamente ditos devem
+> resultar da atividade profissional. Note-se, aliás, que tal requisito constituiria, a priori,
+> uma barreira intransponível para os casos dos Requerentes que iniciam uma atividade
+> profissional em momento próximo ao da apresentação do pedido de concessão de
+> autorização de residência.»
+
+Sobre a omissão de pronúncia sobre o termo de responsabilidade:
+
+> «Em sede de audiência prévia, a Requerente juntou termo de responsabilidade, o que,
+> só por si, impõe uma pronúncia expressa da Requerida (art. 12.º da Lei n.º 23/2007, e art.
+> 5.º do Decreto-Regulamentar n.º 84/2007), atenta a força probatória do mesmo com
+> relevância para a questão dos meios de subsistência (cfr n.º 2, do referido art. 5.º),
+> sendo que a Requerida se dispensou tout court — e mal — de se pronunciar sobre o
+> mesmo em sede de decisão final.»
+
+Sobre a fundamentação tardia em sede de reclamação:
+
+> «é em sede de resposta à reclamação que a Requerida desenvolve o argumento,
+> expondo um entendimento da lei que além de não se encontrar na fundamentação do
+> ato, não colhe (por se traduzir na densificação de um requisito sem qualquer razão
+> jurídica ou de facto para o efeito).»
+
+Sobre o dispositivo condenatório:
+
+> «devendo a Requerida tomar em consideração a questão do agregado familiar tal como
+> apresentada pela Requerente, com pronúncia sobre todos os argumentos e documentos
+> juntos, isolando expressamente aqueles que, fundamentadamente, considere irrelevantes
+> ou impertinentes para a sua decisão.»
+
+**Argumentos para os quais se cita:**
+
+- AIMA criou requisito sem base legal — meios não precisam de ter origem subordinada
+  (fumus boni iuris)
+- Cômputo dos meios por referência ao agregado familiar (art. 2.º/2 Portaria 1563/2007)
+- Omissão de pronúncia sobre termo de responsabilidade = défice de fundamentação
+  autónomo
+- Fundamentação tardia em reclamação não supre o vício do ato original
+- Via processual: conhecimento do mérito da principal em sede cautelar (art. 121.º/1 CPTA)
+
+> **ALERTA:** Sentença de 1.ª instância, sujeita a recurso. Verificar trânsito em julgado.
+> Usar preferencialmente como modelo argumentativo e como prova de acolhimento judicial
+> da tese, não como autoridade consolidada.
+
+**Teses expressamente REJEITADAS pelo Tribunal (evitar como fundamento principal):**
+
+- Direito à residência por via do matrimónio (não confere, por si só, direito)
+- Morosidade da AIMA como fundamento de legalidade da permanência
+- Retórica de direitos fundamentais (art. 8.º CEDH) desligada do erro de legalidade concreto
+
+**Fórmula de citação sugerida:**
+"A mesma tese foi já acolhida pelo TAF de Loulé, no Saneador-Sentença proferido no
+proc. n.º 247/26.0BELLE, de 21 de abril de 2026 (Juiz Carlos Sérgio Madureira Rodrigues),
+que fixou que «[citação verbatim do bloco aplicável]»."
+
+---
+
+## TCA Norte — Tribunal Central Administrativo Norte (adicionais)
+
+### Acórdão proc. 02050/12.5BEPRT
+
+**Tribunal:** TCA Norte
+**Data:** 8 de janeiro de 2016
+**Tema:** Cômputo dos meios de subsistência por referência ao agregado familiar
+
+**Argumentos para os quais se cita:**
+
+- Meios de subsistência aferidos por referência ao agregado familiar (art. 2.º/2
+  Portaria 1563/2007)
+- Expressamente invocado na sentença do TAF Loulé 247/26.0BELLE como suporte
+  para esta tese
+
+**Fórmula de citação sugerida:**
+"Neste sentido, o TCA Norte, no acórdão de 8 de janeiro de 2016 (Proc. n.º
+02050/12.5BEPRT), disponível em www.dgsi.pt."
+
+---
+
+### Acórdão proc. 02421/24.4BEPRT
+
+**Tribunal:** TCA Norte
+**Data:** 4 de julho de 2025
+**Tema:** Efeitos do art. 66.º/2 CPTA — procedência condenatória elimina ato impugnado
+
+**Argumentos para os quais se cita:**
+
+- Via processual: efeitos da procedência condenatória na ACPAD
+- Expressamente invocado na sentença do TAF Loulé como fundamento para conhecer
+  do mérito da principal em sede cautelar
+
+**Fórmula de citação sugerida:**
+"Conforme o TCA Norte, no acórdão de 4 de julho de 2025 (Proc. n.º 02421/24.4BEPRT),
+disponível em www.dgsi.pt."
+
+---
+
+## TEDH — Tribunal Europeu dos Direitos Humanos (adicionais)
+
+### Nunez c. Noruega — Req. n.º 55597/09
+
+**Data:** 28 de junho de 2011
+**Tema:** Violação do art. 8.º CEDH em afastamento de mãe de menores
+
+**Ratio:** Insuficiente ponderação dos interesses da criança, mesmo com infrações
+imigratórias prévias do progenitor. O interesse superior da criança pode prevalecer
+sobre a política de controlo de imigração.
+
+**Fórmula de citação sugerida:**
+"O TEDH, no caso Nunez c. Noruega (req. n.º 55597/09, de 28 de junho de 2011),
+declarou violado o art. 8.º da Convenção por insuficiente ponderação dos interesses
+da criança no contexto de afastamento do progenitor, ainda que este tenha cometido
+infrações imigratórias."
+
+### Rodrigues da Silva e Hoogkamer c. Países Baixos — Req. n.º 50435/99
+
+**Data:** 31 de janeiro de 2006
+**Tema:** Art. 8.º CEDH — afastamento e vida familiar com menor
+
+**Fórmula de citação sugerida:**
+"Neste sentido, o TEDH, no caso Rodrigues da Silva e Hoogkamer c. Países Baixos
+(req. n.º 50435/99, de 31 de janeiro de 2006)."
+
+### Jeunesse c. Países Baixos — Req. n.º 12738/10
+
+**Data:** 3 de outubro de 2014 (Grande Câmara)
+**Tema:** Art. 8.º CEDH — recusa de autorização de residência e vida familiar
+
+**Fórmula de citação sugerida:**
+"A Grande Câmara do TEDH, no caso Jeunesse c. Países Baixos (req. n.º 12738/10,
+de 3 de outubro de 2014), reiterou que os Estados-Membros devem ponderar de forma
+individualizada os interesses familiares em presença ao decidir sobre a permanência
+de estrangeiro com laços familiares estabelecidos."
+
+---
+
+## TJUE — Tribunal de Justiça da União Europeia (adicionais)
+
+### Acórdão C-34/09 — Ruiz Zambrano
+
+**Tribunal:** TJUE (Grande Secção)
+**Tema:** Art. 20.º TFUE — cidadania da União e direito derivado de permanência do
+progenitor de Estado terceiro
+
+**Uso:** Aplicável quando filho menor é nacional UE/PT e afastamento do progenitor de
+Estado terceiro o privaria do gozo efetivo da cidadania da União.
+
+**Fórmula de citação sugerida:**
+"O TJUE, no acórdão Ruiz Zambrano (Processo C-34/09, Grande Secção), fixou que o
+art. 20.º TFUE se opõe a medidas nacionais que tenham por efeito privar os cidadãos
+da União do gozo efetivo do essencial dos direitos conferidos pelo seu estatuto de
+cidadão da União — o que sucede quando o afastamento do progenitor de Estado terceiro
+obriga o menor nacional da União a abandonar o território desta."
+
+### Acórdão C-133/15 — Chavez-Vilchez
+
+**Tribunal:** TJUE (Grande Secção)
+**Tema:** Densificação do critério Ruiz Zambrano — relação de dependência da criança
+
+**Fórmula de citação sugerida:**
+"O TJUE, no acórdão Chavez-Vilchez (Processo C-133/15, Grande Secção), densificou os
+critérios Ruiz Zambrano, exigindo aos Estados-Membros que avaliem a relação de
+dependência entre a criança cidadã da União e o progenitor nacional de Estado terceiro."
+
+---
+
 ## Como usar este ficheiro
 
 1. Antes de redigir a secção de direito, identificar os argumentos que se pretende
