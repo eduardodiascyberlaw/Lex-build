@@ -121,14 +121,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
       }
 
-      // Handle Phase 3 skip if tempestividade not active
+      // Handle phase skips based on pecaType and caseData
       let nextStatus = transition.next;
       let nextPhase = transition.nextPhase;
+      const pecaType = peca.type as "ACPAD" | "CAUTELAR";
+      const caseDataForSkip = peca.caseData as Record<string, unknown> | null;
 
-      if (currentPhase === 2) {
-        const caseData = peca.caseData as Record<string, unknown> | null;
-        if (!caseData?.tempestividade_ativa) {
-          // Skip phase 3
+      if (pecaType === "CAUTELAR") {
+        // CAUTELAR: skip phase 1 (after phase 0) and phase 3 (after phase 2)
+        if (currentPhase === 0) {
+          await tx.phase.create({
+            data: { pecaId: id, number: 1, status: "SKIPPED" },
+          });
+          nextStatus = "PHASE_2_ACTIVE";
+          nextPhase = 2;
+        }
+        if (currentPhase === 2) {
+          await tx.phase.create({
+            data: { pecaId: id, number: 3, status: "SKIPPED" },
+          });
+          nextStatus = "PHASE_4_ACTIVE";
+          nextPhase = 4;
+        }
+      } else {
+        // ACPAD: skip phase 3 if tempestividade not active
+        if (currentPhase === 2 && !caseDataForSkip?.tempestividade_ativa) {
           await tx.phase.create({
             data: { pecaId: id, number: 3, status: "SKIPPED" },
           });

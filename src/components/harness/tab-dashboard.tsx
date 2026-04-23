@@ -37,16 +37,16 @@ export function TabDashboard({ peca, onReload }: TabDashboardProps) {
       <MetricsRow peca={peca} />
 
       {/* Main grid */}
-      <div className="grid grid-cols-12 gap-px bg-border mt-px">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-border mt-px">
         {/* Left column: 8 cols */}
-        <div className="col-span-8 bg-background space-y-px">
+        <div className="col-span-1 md:col-span-8 bg-background space-y-px">
           <CaseIdentification peca={peca} />
           <KnowledgeSummary peca={peca} />
           <LiveLog peca={peca} />
         </div>
 
         {/* Right column: 4 cols */}
-        <div className="col-span-4 bg-background space-y-px">
+        <div className="col-span-1 md:col-span-4 bg-background space-y-px">
           <PipelineState peca={peca} />
           <ActiveModules peca={peca} />
           <DocumentsList peca={peca} />

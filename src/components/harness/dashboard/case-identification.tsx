@@ -27,7 +27,7 @@ export function CaseIdentification({ peca }: CaseIdentificationProps) {
         IDENTIFICACAO DO CASO
       </h3>
       <p className="text-sm font-semibold text-foreground mb-3">{title}</p>
-      <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
         {fields.map((f) => (
           <div key={f.label}>
             <span className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-foreground">

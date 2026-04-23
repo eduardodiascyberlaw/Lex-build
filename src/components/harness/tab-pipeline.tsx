@@ -5,20 +5,12 @@ import type { PecaDetail } from "./harness-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApprovalBar } from "@/components/peca/approval-bar";
+import { getPhaseNames } from "@/lib/orchestrator";
 
 interface TabPipelineProps {
   peca: PecaDetail;
   onApproved: () => void;
 }
-
-const PHASE_LABELS: Record<number, string> = {
-  0: "Analise documental",
-  1: "Pressupostos",
-  2: "Materia de facto",
-  3: "Tempestividade",
-  4: "Materia de direito",
-  5: "Pedidos e prova",
-};
 
 function statusBadge(status: string) {
   switch (status) {
@@ -45,6 +37,7 @@ function formatTime(dateStr: string | null): string {
 }
 
 export function TabPipeline({ peca, onApproved }: TabPipelineProps) {
+  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR");
   const [expandedPhase, setExpandedPhase] = useState<number | null>(peca.currentPhase);
   const phaseMap = new Map(peca.phases.map((p) => [p.number, p]));
 
@@ -72,27 +65,33 @@ export function TabPipeline({ peca, onApproved }: TabPipelineProps) {
               {/* Phase header */}
               <button
                 onClick={() => setExpandedPhase(isExpanded ? null : n)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+                className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 hover:bg-muted/50 transition-colors"
               >
-                <span className="font-mono text-sm text-muted-foreground w-6">{n}</span>
-                <span className="text-sm font-medium flex-1 text-left">{PHASE_LABELS[n]}</span>
+                <span className="font-mono text-sm text-muted-foreground w-4 sm:w-6 shrink-0">
+                  {n}
+                </span>
+                <span className="text-xs sm:text-sm font-medium flex-1 text-left truncate">
+                  {PHASE_LABELS[n]}
+                </span>
                 {statusBadge(status)}
                 {tokens > 0 && (
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="hidden sm:inline font-mono text-xs text-muted-foreground">
                     {tokens.toLocaleString()} tk
                   </span>
                 )}
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="hidden sm:inline font-mono text-xs text-muted-foreground">
                   {formatTime(phase?.startedAt ?? null)}
                 </span>
-                <span className="text-muted-foreground text-xs">{isExpanded ? "▼" : "▶"}</span>
+                <span className="text-muted-foreground text-xs shrink-0">
+                  {isExpanded ? "▼" : "▶"}
+                </span>
               </button>
 
               {/* Phase content (expanded) */}
               {isExpanded && (
                 <div className="border-t border-border px-4 py-3 space-y-3">
                   {/* Timestamps */}
-                  <div className="flex gap-6 text-xs text-muted-foreground font-mono">
+                  <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1 text-xs text-muted-foreground font-mono">
                     <span>INICIO: {formatTime(phase?.startedAt ?? null)}</span>
                     <span>FIM: {formatTime(phase?.approvedAt ?? null)}</span>
                     {phase?.tokenInput != null && (

@@ -114,18 +114,35 @@ export function HarnessShell({ pecaId }: HarnessShellProps) {
     <div className="flex h-[calc(100vh-3rem)] flex-col">
       <HarnessTabNav activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="flex-1 overflow-hidden">
-        {activeTab === "dashboard" && <TabDashboard peca={peca} onReload={loadPeca} />}
-        {activeTab === "pipeline" && <TabPipeline peca={peca} onApproved={handleApproved} />}
+        {activeTab === "dashboard" && (
+          <div className="h-full harness-animate-in">
+            <TabDashboard peca={peca} onReload={loadPeca} />
+          </div>
+        )}
+        {activeTab === "pipeline" && (
+          <div className="h-full harness-animate-in">
+            <TabPipeline peca={peca} onApproved={handleApproved} />
+          </div>
+        )}
         {activeTab === "chat" && (
           <TabChat
             peca={peca}
             messages={chatMessages}
             onNewMessage={handleNewMessage}
             onApproved={handleApproved}
+            onReload={loadPeca}
           />
         )}
-        {activeTab === "knowledge" && <TabKnowledge peca={peca} />}
-        {activeTab === "prompt-lab" && <TabPromptLab peca={peca} />}
+        {activeTab === "knowledge" && (
+          <div className="h-full harness-animate-in">
+            <TabKnowledge peca={peca} />
+          </div>
+        )}
+        {activeTab === "prompt-lab" && (
+          <div className="h-full harness-animate-in">
+            <TabPromptLab peca={peca} />
+          </div>
+        )}
       </div>
     </div>
   );

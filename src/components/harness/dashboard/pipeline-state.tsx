@@ -2,19 +2,11 @@
 
 import type { PecaDetail } from "../harness-shell";
 import { Badge } from "@/components/ui/badge";
+import { getPhaseNames } from "@/lib/orchestrator";
 
 interface PipelineStateProps {
   peca: PecaDetail;
 }
-
-const PHASE_LABELS: Record<number, string> = {
-  0: "Analise documental",
-  1: "Pressupostos",
-  2: "Materia de facto",
-  3: "Tempestividade",
-  4: "Materia de direito",
-  5: "Pedidos e prova",
-};
 
 function statusBadge(status: string, isCurrentPhase: boolean) {
   switch (status) {
@@ -42,6 +34,7 @@ function formatTime(dateStr: string | null): string {
 }
 
 export function PipelineState({ peca }: PipelineStateProps) {
+  const PHASE_LABELS = getPhaseNames(peca.type as "ACPAD" | "CAUTELAR");
   // Build phase 0-5 array with fallback for phases not yet created
   const phaseMap = new Map(peca.phases.map((p) => [p.number, p]));
 
@@ -68,11 +61,11 @@ export function PipelineState({ peca }: PipelineStateProps) {
               <span className="text-xs flex-1 truncate">{PHASE_LABELS[n]}</span>
               {statusBadge(status, isCurrentPhase)}
               {tokens > 0 && (
-                <span className="font-mono text-[0.6rem] text-muted-foreground">
+                <span className="hidden sm:inline font-mono text-[0.6rem] text-muted-foreground">
                   {tokens.toLocaleString()}tk
                 </span>
               )}
-              <span className="font-mono text-[0.6rem] text-muted-foreground w-12 text-right">
+              <span className="hidden sm:inline font-mono text-[0.6rem] text-muted-foreground w-12 text-right">
                 {formatTime(phase?.startedAt ?? null)}
               </span>
             </div>

@@ -5,13 +5,19 @@ import path from "path";
 
 const logger = createLogger("context-engine");
 
-const KNOWLEDGE_DIR = path.join(process.cwd(), "knowledge", "acpad");
+function getKnowledgeDir(pecaType: "ACPAD" | "CAUTELAR"): string {
+  const subdir = pecaType === "CAUTELAR" ? "cautelar" : "acpad";
+  return path.join(process.cwd(), "knowledge", subdir);
+}
 
-async function loadKnowledgeFile(filename: string): Promise<string> {
+async function loadKnowledgeFile(
+  filename: string,
+  pecaType: "ACPAD" | "CAUTELAR" = "ACPAD"
+): Promise<string> {
   try {
-    return await readFile(path.join(KNOWLEDGE_DIR, filename), "utf-8");
+    return await readFile(path.join(getKnowledgeDir(pecaType), filename), "utf-8");
   } catch {
-    logger.warn({ filename }, "Knowledge file not found");
+    logger.warn({ filename, pecaType }, "Knowledge file not found");
     return "";
   }
 }
@@ -193,126 +199,224 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
 
   const activeModules: string[] = (caseData?.modules_active as string[]) ?? [];
 
-  // Load global rules (always present)
-  const globalRules = await loadKnowledgeFile("global-rules.md");
+  // Load global rules (always present, type-aware)
+  const globalRules = await loadKnowledgeFile("global-rules.md", pecaType);
 
   const systemParts: string[] = [globalRules];
   const userParts: string[] = [];
 
-  switch (phase) {
-    case 0: {
-      // PHASE 0 — document analysis and routing
-      const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md");
-      systemParts.push(phase0Instructions);
+  if (pecaType === "CAUTELAR") {
+    switch (phase) {
+      case 0: {
+        const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md", pecaType);
+        systemParts.push(phase0Instructions);
 
-      // Module catalog (metadata only)
-      const allModules = await prisma.thematicModule.findMany({
-        where: { isActive: true, pecaTypes: { has: pecaType } },
-        select: { code: true, name: true, description: true },
-        orderBy: { sortOrder: "asc" },
-      });
-      let catalog = `\n## Catálogo de módulos temáticos disponíveis\n\n`;
-      for (const m of allModules) {
-        catalog += `- **${m.code}** — ${m.name}: ${m.description ?? ""}\n`;
+        const allModules = await prisma.thematicModule.findMany({
+          where: { isActive: true, pecaTypes: { has: pecaType } },
+          select: { code: true, name: true, description: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        let catalog = `\n## Catálogo de módulos temáticos disponíveis\n\n`;
+        for (const m of allModules) {
+          catalog += `- **${m.code}** — ${m.name}: ${m.description ?? ""}\n`;
+        }
+        systemParts.push(catalog);
+        userParts.push(`## Documentos do caso\n\n${documentsText}`);
+        break;
       }
-      systemParts.push(catalog);
 
-      userParts.push(`## Documentos do caso\n\n${documentsText}`);
-      break;
-    }
-
-    case 1: {
-      // PHASE 1 — Pressupostos
-      const agent = await loadKnowledgeFile("agents/pressupostos.md");
-      const antiAi = await loadKnowledgeFile("anti-ai-review.md");
-      const styleRefs = await loadStyleRefs(userId, pecaType, "PRESSUPOSTOS");
-      systemParts.push(agent, antiAi, styleRefs);
-
-      userParts.push(`## Documentos\n\n${documentsText}`);
-      if (caseData)
-        userParts.push(`## Plano do caso (caseData)\n\n${JSON.stringify(caseData, null, 2)}`);
-      userParts.push(`\nRedige a Secção I — Pressupostos processuais.`);
-      break;
-    }
-
-    case 2: {
-      // PHASE 2 — Matéria de facto
-      const agent = await loadKnowledgeFile("agents/facto-acpad.md");
-      const antiAi = await loadKnowledgeFile("anti-ai-review.md");
-      const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
-      // Modules: legislation + notes only (no jurisprudence/doctrine)
-      const moduleContent = await loadModuleContent(activeModules, false, false, userId);
-      systemParts.push(agent, antiAi, styleRefs);
-
-      userParts.push(`## Documentos\n\n${documentsText}`);
-      if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
-      if (previousOutputs[1])
-        userParts.push(`## Secção I — Pressupostos (aprovados)\n\n${previousOutputs[1]}`);
-      if (moduleContent) userParts.push(moduleContent);
-      userParts.push(`\nRedige a Secção II — Matéria de facto.`);
-      break;
-    }
-
-    case 3: {
-      // PHASE 3 — Tempestividade (conditional)
-      const agent = await loadKnowledgeFile("agents/tempestividade.md");
-      const antiAi = await loadKnowledgeFile("anti-ai-review.md");
-      const styleRefs = await loadStyleRefs(userId, pecaType, "TEMPESTIVIDADE");
-      const tempRef = await loadKnowledgeFile("references/tempestividade-cpta.md");
-      const coreLeg = await loadCoreLegislation();
-      systemParts.push(agent, antiAi, styleRefs);
-
-      userParts.push(`## Documentos\n\n${documentsText}`);
-      if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
-      if (previousOutputs[1]) userParts.push(`## Secção I — Pressupostos\n\n${previousOutputs[1]}`);
-      if (previousOutputs[2]) userParts.push(`## Secção II — Factos\n\n${previousOutputs[2]}`);
-      if (coreLeg) userParts.push(coreLeg);
-      if (tempRef) userParts.push(`## Referência: Tempestividade CPTA\n\n${tempRef}`);
-      userParts.push(`\nRedige a Secção III — Tempestividade.`);
-      break;
-    }
-
-    case 4: {
-      // PHASE 4 — Matéria de direito (HEAVIEST)
-      const agent = await loadKnowledgeFile("agents/direito-acpad.md");
-      const antiAi = await loadKnowledgeFile("anti-ai-review.md");
-      const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
-      const coreLeg = await loadCoreLegislation();
-      // Full module content: legislation + jurisprudence + doctrine + notes
-      const moduleContent = await loadModuleContent(activeModules, true, true, userId);
-      systemParts.push(agent, antiAi, styleRefs);
-
-      userParts.push(`## Documentos\n\n${documentsText}`);
-      if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
-      for (let p = 1; p <= 3; p++) {
-        if (previousOutputs[p]) userParts.push(`## Output Fase ${p}\n\n${previousOutputs[p]}`);
+      case 1: {
+        // CAUTELAR skips phase 1 — safety return
+        break;
       }
-      if (coreLeg) userParts.push(coreLeg);
-      if (moduleContent) userParts.push(moduleContent);
-      userParts.push(`\nRedige a Secção de Direito.`);
-      break;
-    }
 
-    case 5: {
-      // PHASE 5 — Pedidos, prova e valor
-      const agent = await loadKnowledgeFile("agents/pedidos-acpad.md");
-      const styleRefs = await loadStyleRefs(userId, pecaType, "PEDIDOS");
-      const provaRef = await loadKnowledgeFile("references/prova-administrativa.md");
-      systemParts.push(agent, styleRefs);
+      case 2: {
+        // CAUTELAR PHASE 2 — Matéria de facto (agents/facto.md)
+        const agent = await loadKnowledgeFile("agents/facto.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
+        const moduleContent = await loadModuleContent(activeModules, false, false, userId);
 
-      userParts.push(`## Documentos\n\n${documentsText}`);
-      if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
-      for (let p = 1; p <= 4; p++) {
-        if (previousOutputs[p]) userParts.push(`## Output Fase ${p}\n\n${previousOutputs[p]}`);
+        // Load cautelar-specific references based on caseData modules
+        const refParts: string[] = [];
+        if (activeModules.includes("sis-indicacao")) {
+          refParts.push(await loadKnowledgeFile("references/sis-aima.md", pecaType));
+        }
+        if (activeModules.includes("abandono-voluntario")) {
+          refParts.push(await loadKnowledgeFile("references/abandono-voluntario.md", pecaType));
+        }
+        if (
+          activeModules.includes("proporcionalidade") ||
+          activeModules.includes("integracao-socioprofissional")
+        ) {
+          refParts.push(await loadKnowledgeFile("references/proporcionalidade.md", pecaType));
+        }
+
+        systemParts.push(agent, antiAi, styleRefs, ...refParts.filter(Boolean));
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (moduleContent) userParts.push(moduleContent);
+        userParts.push(`\nRedige a secção "DOS FACTOS" em articulados numerados.`);
+        break;
       }
-      if (provaRef) userParts.push(`## Referência: Prova Administrativa\n\n${provaRef}`);
-      userParts.push(`\nRedige a Secção Final — Pedidos, prova documental e valor da causa.`);
-      break;
-    }
 
-    default:
-      logger.error({ phase }, "Unknown phase number");
-      throw new Error(`Unknown phase: ${phase}`);
+      case 3: {
+        // CAUTELAR skips phase 3 — safety return
+        break;
+      }
+
+      case 4: {
+        // CAUTELAR PHASE 4 — Direito — 3 pilares (agents/direito.md)
+        const agent = await loadKnowledgeFile("agents/direito.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
+        const jurisRef = await loadKnowledgeFile("references/jurisprudencia.md", pecaType);
+        const coreLeg = await loadCoreLegislation();
+        const moduleContent = await loadModuleContent(activeModules, true, true, userId);
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[2])
+          userParts.push(`## Secção DOS FACTOS (aprovada)\n\n${previousOutputs[2]}`);
+        if (coreLeg) userParts.push(coreLeg);
+        if (moduleContent) userParts.push(moduleContent);
+        if (jurisRef) userParts.push(`## Referência: Jurisprudência citável\n\n${jurisRef}`);
+        userParts.push(
+          `\nRedige a secção "DO DIREITO" com os 3 pilares (fumus, periculum, ponderação).`
+        );
+        break;
+      }
+
+      case 5: {
+        // CAUTELAR PHASE 5 — Pedidos (agents/pedidos.md)
+        const agent = await loadKnowledgeFile("agents/pedidos.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "PEDIDOS");
+        systemParts.push(agent, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[2]) userParts.push(`## Secção DOS FACTOS\n\n${previousOutputs[2]}`);
+        if (previousOutputs[4]) userParts.push(`## Secção DO DIREITO\n\n${previousOutputs[4]}`);
+        userParts.push(
+          `\nRedige a secção "DOS PEDIDOS" com pedidos cautelares, prova e valor da causa.`
+        );
+        break;
+      }
+
+      default:
+        logger.error({ phase, pecaType }, "Unknown phase number");
+        throw new Error(`Unknown phase: ${phase}`);
+    }
+  } else {
+    // ACPAD — original logic
+    switch (phase) {
+      case 0: {
+        const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md", pecaType);
+        systemParts.push(phase0Instructions);
+
+        const allModules = await prisma.thematicModule.findMany({
+          where: { isActive: true, pecaTypes: { has: pecaType } },
+          select: { code: true, name: true, description: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        let catalog = `\n## Catálogo de módulos temáticos disponíveis\n\n`;
+        for (const m of allModules) {
+          catalog += `- **${m.code}** — ${m.name}: ${m.description ?? ""}\n`;
+        }
+        systemParts.push(catalog);
+        userParts.push(`## Documentos do caso\n\n${documentsText}`);
+        break;
+      }
+
+      case 1: {
+        const agent = await loadKnowledgeFile("agents/pressupostos.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "PRESSUPOSTOS");
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData)
+          userParts.push(`## Plano do caso (caseData)\n\n${JSON.stringify(caseData, null, 2)}`);
+        userParts.push(`\nRedige a Secção I — Pressupostos processuais.`);
+        break;
+      }
+
+      case 2: {
+        const agent = await loadKnowledgeFile("agents/facto-acpad.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "FACTOS");
+        const moduleContent = await loadModuleContent(activeModules, false, false, userId);
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Secção I — Pressupostos (aprovados)\n\n${previousOutputs[1]}`);
+        if (moduleContent) userParts.push(moduleContent);
+        userParts.push(`\nRedige a Secção II — Matéria de facto.`);
+        break;
+      }
+
+      case 3: {
+        const agent = await loadKnowledgeFile("agents/tempestividade.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "TEMPESTIVIDADE");
+        const tempRef = await loadKnowledgeFile("references/tempestividade-cpta.md", pecaType);
+        const coreLeg = await loadCoreLegislation();
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Secção I — Pressupostos\n\n${previousOutputs[1]}`);
+        if (previousOutputs[2]) userParts.push(`## Secção II — Factos\n\n${previousOutputs[2]}`);
+        if (coreLeg) userParts.push(coreLeg);
+        if (tempRef) userParts.push(`## Referência: Tempestividade CPTA\n\n${tempRef}`);
+        userParts.push(`\nRedige a Secção III — Tempestividade.`);
+        break;
+      }
+
+      case 4: {
+        const agent = await loadKnowledgeFile("agents/direito-acpad.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO");
+        const coreLeg = await loadCoreLegislation();
+        const moduleContent = await loadModuleContent(activeModules, true, true, userId);
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        for (let p = 1; p <= 3; p++) {
+          if (previousOutputs[p]) userParts.push(`## Output Fase ${p}\n\n${previousOutputs[p]}`);
+        }
+        if (coreLeg) userParts.push(coreLeg);
+        if (moduleContent) userParts.push(moduleContent);
+        userParts.push(`\nRedige a Secção de Direito.`);
+        break;
+      }
+
+      case 5: {
+        const agent = await loadKnowledgeFile("agents/pedidos-acpad.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "PEDIDOS");
+        const provaRef = await loadKnowledgeFile("references/prova-administrativa.md", pecaType);
+        systemParts.push(agent, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        for (let p = 1; p <= 4; p++) {
+          if (previousOutputs[p]) userParts.push(`## Output Fase ${p}\n\n${previousOutputs[p]}`);
+        }
+        if (provaRef) userParts.push(`## Referência: Prova Administrativa\n\n${provaRef}`);
+        userParts.push(`\nRedige a Secção Final — Pedidos, prova documental e valor da causa.`);
+        break;
+      }
+
+      default:
+        logger.error({ phase }, "Unknown phase number");
+        throw new Error(`Unknown phase: ${phase}`);
+    }
   }
 
   return {

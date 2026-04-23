@@ -24,15 +24,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Ownership check
   const peca = await prisma.peca.findFirst({
     where: { id, userId: auth.user.id },
-    select: { id: true, status: true },
+    select: { id: true },
   });
 
   if (!peca) {
     return errorResponse("Não encontrado", 404, "NOT_FOUND");
-  }
-
-  if (peca.status !== "DRAFT") {
-    return errorResponse("Uploads só são permitidos antes de iniciar o pipeline", 400, "NOT_DRAFT");
   }
 
   try {

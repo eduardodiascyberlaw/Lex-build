@@ -41,8 +41,8 @@ export default async function DashboardPage() {
         <PecaTypeCard
           type="CAUTELAR"
           title="Providência Cautelar"
-          description="Providência cautelar administrativa. Em breve."
-          available={false}
+          description="Suspensão de eficácia de ato administrativo. 3 fases: facto, direito, pedidos."
+          available
         />
       </div>
 

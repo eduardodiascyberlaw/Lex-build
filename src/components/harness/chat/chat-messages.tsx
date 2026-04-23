@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { PecaDetail, Message } from "../harness-shell";
-import { ApprovalBar } from "@/components/peca/approval-bar";
+import { Button } from "@/components/ui/button";
 
 interface ChatMessagesProps {
   peca: PecaDetail;
   messages: Message[];
   onNewMessage: (msg: Message) => void;
   onApproved: () => void;
+  editMode?: boolean;
+  onEditDone?: () => void;
+  uploadError?: string;
 }
 
 function formatTimestamp(): string {
@@ -19,10 +22,25 @@ function formatTimestamp(): string {
   });
 }
 
-export function ChatMessages({ peca, messages, onNewMessage, onApproved }: ChatMessagesProps) {
+export function ChatMessages({
+  peca,
+  messages,
+  onNewMessage,
+  onApproved,
+  editMode,
+  onEditDone,
+  uploadError,
+}: ChatMessagesProps) {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Edit mode state
+  const [editedContent, setEditedContent] = useState("");
+  const [saveAsStyleRef, setSaveAsStyleRef] = useState(false);
+  const [styleNotes, setStyleNotes] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const currentPhaseData = peca.phases.find(
     (p) => p.number === peca.currentPhase && p.status === "ACTIVE"
@@ -33,6 +51,16 @@ export function ChatMessages({ peca, messages, onNewMessage, onApproved }: ChatM
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamText]);
+
+  // Initialize edit content when entering edit mode
+  useEffect(() => {
+    if (editMode && currentPhaseData?.content) {
+      setEditedContent(currentPhaseData.content);
+      setSaveAsStyleRef(false);
+      setStyleNotes("");
+      setEditError("");
+    }
+  }, [editMode, currentPhaseData?.content]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || streaming) return;
@@ -96,18 +124,104 @@ export function ChatMessages({ peca, messages, onNewMessage, onApproved }: ChatM
     }
   }
 
+  async function handleApproveWithEdits() {
+    setEditLoading(true);
+    setEditError("");
+
+    try {
+      const body: Record<string, unknown> = {
+        editedContent,
+        saveAsStyleRef,
+      };
+      if (saveAsStyleRef && styleNotes) {
+        body.styleRefNotes = styleNotes;
+      }
+
+      const res = await fetch(`/api/pecas/${peca.id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Erro" }));
+        setEditError(data.error || "Erro ao aprovar.");
+        return;
+      }
+
+      if (onEditDone) onEditDone();
+    } catch {
+      setEditError("Erro de ligacao.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-1 flex-col h-full">
+    <div className="flex flex-1 flex-col h-full min-w-0">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {/* Show approval bar when phase has content */}
-        {hasContent && (
-          <div className="mb-3">
-            <ApprovalBar
-              pecaId={peca.id}
-              phaseContent={currentPhaseData!.content}
-              onApproved={onApproved}
+        {/* Upload error */}
+        {uploadError && (
+          <div className="rounded-sm bg-primary/10 border border-primary/30 px-3 py-2 text-xs font-mono text-primary">
+            {uploadError}
+          </div>
+        )}
+
+        {/* Inline editor when editMode is active */}
+        {editMode && hasContent && (
+          <div className="harness-panel p-4 space-y-3 harness-animate-in">
+            <h4 className="harness-sigil">§ EDITAR FASE {peca.currentPhase}</h4>
+            {editError && (
+              <div className="rounded-sm bg-primary/10 border border-primary/30 px-3 py-2 text-xs text-primary">
+                {editError}
+              </div>
+            )}
+            <textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              rows={15}
+              className="w-full resize-y bg-muted border border-border rounded-sm px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="editSaveStyleRef"
+                checked={saveAsStyleRef}
+                onChange={(e) => setSaveAsStyleRef(e.target.checked)}
+              />
+              <label htmlFor="editSaveStyleRef" className="text-xs text-muted-foreground">
+                Guardar como referencia de estilo
+              </label>
+            </div>
+            {saveAsStyleRef && (
+              <textarea
+                value={styleNotes}
+                onChange={(e) => setStyleNotes(e.target.value)}
+                placeholder="Notas sobre a correcao..."
+                rows={2}
+                className="w-full resize-none bg-muted border border-border rounded-sm px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            )}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="font-mono text-xs"
+                onClick={handleApproveWithEdits}
+                disabled={editLoading}
+              >
+                {editLoading ? "A APROVAR..." : "APROVAR COM EDICOES"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs"
+                onClick={onEditDone}
+                disabled={editLoading}
+              >
+                CANCELAR
+              </Button>
+            </div>
           </div>
         )}
 

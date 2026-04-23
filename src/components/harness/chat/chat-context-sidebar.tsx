@@ -8,6 +8,9 @@ interface ChatContextSidebarProps {
   peca: PecaDetail;
   onCommand: (command: string) => void;
   onApprove: () => void;
+  onEdit?: () => void;
+  onAttach?: () => void;
+  uploading?: boolean;
 }
 
 interface RecentPeca {
@@ -26,7 +29,14 @@ const PHASE_LABELS: Record<number, string> = {
   5: "Pedidos e prova",
 };
 
-export function ChatContextSidebar({ peca, onCommand, onApprove }: ChatContextSidebarProps) {
+export function ChatContextSidebar({
+  peca,
+  onCommand,
+  onApprove,
+  onEdit,
+  onAttach,
+  uploading,
+}: ChatContextSidebarProps) {
   const [recentPecas, setRecentPecas] = useState<RecentPeca[]>([]);
 
   useEffect(() => {
@@ -84,6 +94,27 @@ export function ChatContextSidebar({ peca, onCommand, onApprove }: ChatContextSi
               onClick={onApprove}
             >
               /FASE APROVAR
+            </Button>
+          )}
+          {hasContent && onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start text-xs font-mono h-7"
+              onClick={onEdit}
+            >
+              /FASE EDITAR
+            </Button>
+          )}
+          {onAttach && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start text-xs font-mono h-7"
+              onClick={onAttach}
+              disabled={uploading}
+            >
+              {uploading ? "/DOC A ENVIAR..." : "/DOC ANEXAR"}
             </Button>
           )}
           <Button

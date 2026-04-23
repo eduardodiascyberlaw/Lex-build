@@ -45,7 +45,7 @@ export function KnowledgeSummary({ peca }: KnowledgeSummaryProps) {
       {!items ? (
         <span className="text-xs text-muted-foreground font-mono">A carregar...</span>
       ) : (
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {items.map((item) => (
             <div key={item.label} className="text-center">
               <div className="font-mono text-lg font-bold text-foreground">{item.value}</div>

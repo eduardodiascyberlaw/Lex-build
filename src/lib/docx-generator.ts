@@ -12,6 +12,13 @@ const execFileAsync = promisify(execFile);
 const logger = createLogger("docx-generator");
 
 const SCRIPT_PATH = join(process.cwd(), "knowledge", "acpad", "scripts", "gerar_docx.py");
+const CAUTELAR_SCRIPT_PATH = join(
+  process.cwd(),
+  "knowledge",
+  "cautelar",
+  "scripts",
+  "gerar_docx.py"
+);
 
 interface DocxInput {
   pecaId: string;
@@ -40,6 +47,11 @@ export async function generateDocx(input: DocxInput): Promise<string> {
       },
     },
   });
+
+  // Dispatch CAUTELAR to dedicated generator
+  if (peca.type === "CAUTELAR") {
+    return generateCautelarDocx(pecaId, userId);
+  }
 
   const caseData = peca.caseData as Record<string, unknown> | null;
   if (!caseData) {
@@ -156,6 +168,123 @@ export async function generateDocx(input: DocxInput): Promise<string> {
     try {
       await unlink(jsonPath).catch(() => {});
       await unlink(templatePath).catch(() => {});
+      await unlink(outputPath).catch(() => {});
+      const { rmdir } = await import("fs/promises");
+      await rmdir(tempDir).catch(() => {});
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+}
+
+/**
+ * Generate the final .docx for a completed CAUTELAR peca.
+ *
+ * Uses built-in template (no user template needed).
+ * Phases: 2=factos, 4=direito, 5=pedidos (phases 1,3 skipped).
+ */
+async function generateCautelarDocx(pecaId: string, userId: string): Promise<string> {
+  const peca = await prisma.peca.findFirstOrThrow({
+    where: { id: pecaId, userId },
+    include: {
+      phases: { where: { status: "APPROVED" }, orderBy: { number: "asc" } },
+      user: { select: { name: true, cpOA: true } },
+    },
+  });
+
+  const caseData = peca.caseData as Record<string, unknown> | null;
+  if (!caseData) {
+    throw new Error("Peca has no caseData (Phase 0 not completed)");
+  }
+
+  const phaseContent: Record<number, string> = {};
+  for (const phase of peca.phases) {
+    if (phase.content) {
+      phaseContent[phase.number] = phase.content;
+    }
+  }
+
+  const factos = parseArticles(phaseContent[2] ?? "");
+  const direito = parseArticles(phaseContent[4] ?? "");
+
+  const docxData = {
+    tribunal: (caseData.tribunal as string) ?? "Tribunal Administrativo e Fiscal de Lisboa",
+    juizo:
+      (caseData.juizo as string) ?? "Exmo. Senhor Juiz de Direito do Juízo Administrativo Comum",
+    requerente: caseData.requerente ?? { nome: "REQUERENTE", descricao: "" },
+    requerida: caseData.requerida ?? {
+      nome: "AGÊNCIA PARA A INTEGRAÇÃO, MIGRAÇÕES E ASILO, I.P.",
+      descricao: ", com sede na Avenida António Augusto de Aguiar, 20, 1069-119 Lisboa",
+    },
+    tipo_acao: (caseData.tipo_acao as string) ?? "PROVIDÊNCIA CAUTELAR",
+    subtipo_acao:
+      (caseData.subtipo_acao as string) ?? "DE SUSPENSÃO DE EFICÁCIA DE ATO ADMINISTRATIVO",
+    requisitos_114: caseData.requisitos_114 ?? {},
+    factos,
+    direito_inicio_artigo: factos.length + 1,
+    direito,
+    pedidos_abertura:
+      (caseData.pedidos_abertura as string) ??
+      "Nestes termos e nos melhores de direito que V. Exa. doutamente suprirá, requer-se:",
+    pedidos: parsePedidos(phaseContent[5] ?? ""),
+    valor_causa: (caseData.valor_causa as string) ?? "30.000,01 euros",
+    prova: caseData.prova ?? {
+      documental:
+        "Os documentos juntos aos presentes autos, que se dão por integralmente reproduzidos.",
+    },
+    documentos: (caseData.documentos as string[]) ?? [],
+    data: formatDate(),
+    advogado_nome: peca.user.name ?? "Eduardo S Dias",
+    advogado_cp: peca.user.cpOA ?? "CP 59368P OA",
+  };
+
+  const tempDir = join(tmpdir(), `lexbuild-${randomUUID()}`);
+  await mkdir(tempDir, { recursive: true });
+
+  const jsonPath = join(tempDir, "dados.json");
+  const outputPath = join(tempDir, "cautelar_final.docx");
+
+  try {
+    await writeFile(jsonPath, JSON.stringify(docxData, null, 2), "utf-8");
+
+    // Cautelar uses built-in template — no user template download needed
+    const { stdout, stderr } = await execFileAsync(
+      "python3",
+      [CAUTELAR_SCRIPT_PATH, "--json", jsonPath, "--output", outputPath],
+      { timeout: 30000 }
+    );
+
+    if (stderr) {
+      logger.warn({ stderr }, "gerar_docx.py (cautelar) stderr");
+    }
+    logger.info({ stdout: stdout.trim() }, "CAUTELAR DOCX generated");
+
+    const { readFile } = await import("fs/promises");
+    const docxBuffer = await readFile(outputPath);
+    const s3Key = await uploadToS3(
+      docxBuffer,
+      `cautelar_${pecaId}.docx`,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      `pecas/${pecaId}`
+    );
+
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { outputS3Key: s3Key, status: "COMPLETED" },
+    });
+
+    logger.info({ pecaId, s3Key }, "CAUTELAR DOCX uploaded and peca completed");
+    return s3Key;
+  } catch (err) {
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { status: "ERROR" },
+    });
+    logger.error({ err, pecaId }, "CAUTELAR DOCX generation failed");
+    throw err;
+  } finally {
+    try {
+      await unlink(jsonPath).catch(() => {});
       await unlink(outputPath).catch(() => {});
       const { rmdir } = await import("fs/promises");
       await rmdir(tempDir).catch(() => {});

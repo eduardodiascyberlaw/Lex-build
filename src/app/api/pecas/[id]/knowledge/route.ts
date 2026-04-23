@@ -5,11 +5,13 @@ import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("api-peca-knowledge");
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
+  const detail = req.nextUrl.searchParams.get("detail");
+  const moduleCode = req.nextUrl.searchParams.get("module");
 
   try {
     const peca = await prisma.peca.findFirst({
@@ -21,6 +23,90 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse("Nao encontrado", 404, "NOT_FOUND");
     }
 
+    // If detail=true and module specified, return detailed module data
+    if (detail === "true" && moduleCode) {
+      const mod = await prisma.thematicModule.findFirst({
+        where: { code: moduleCode, isActive: true },
+        include: {
+          legislation: {
+            include: {
+              legislation: {
+                select: { diploma: true, article: true, epigraph: true, content: true },
+              },
+            },
+          },
+          jurisprudence: {
+            where: { isActive: true },
+            select: {
+              court: true,
+              caseNumber: true,
+              date: true,
+              summary: true,
+              keyPassage: true,
+            },
+          },
+          doctrine: {
+            where: { isActive: true },
+            select: {
+              author: true,
+              work: true,
+              passage: true,
+              page: true,
+              year: true,
+            },
+          },
+          platformNotes: {
+            where: { isActive: true },
+            select: {
+              content: true,
+              category: true,
+            },
+          },
+        },
+      });
+
+      if (!mod) {
+        return errorResponse("Modulo nao encontrado", 404, "MODULE_NOT_FOUND");
+      }
+
+      // Also fetch core legislation
+      const coreLegislation = await prisma.legislation.findMany({
+        where: { scope: "CORE", isActive: true },
+        select: { diploma: true, article: true, epigraph: true, content: true },
+        orderBy: [{ diploma: "asc" }, { article: "asc" }],
+      });
+
+      return NextResponse.json({
+        code: mod.code,
+        legislation: mod.legislation.map((ml) => ({
+          diploma: ml.legislation.diploma,
+          article: ml.legislation.article,
+          epigraph: ml.legislation.epigraph,
+          content: ml.legislation.content,
+        })),
+        jurisprudence: mod.jurisprudence.map((j) => ({
+          court: j.court,
+          caseNumber: j.caseNumber,
+          date: j.date,
+          summary: j.summary,
+          keyPassage: j.keyPassage,
+        })),
+        doctrine: mod.doctrine.map((d) => ({
+          author: d.author,
+          work: d.work,
+          passage: d.passage,
+          page: d.page,
+          year: d.year,
+        })),
+        platformNotes: mod.platformNotes.map((n) => ({
+          content: n.content,
+          category: n.category,
+        })),
+        coreLegislation,
+      });
+    }
+
+    // Default: summary counts
     const activeModules =
       ((peca.caseData as Record<string, unknown>)?.modules_active as string[]) ?? [];
 
