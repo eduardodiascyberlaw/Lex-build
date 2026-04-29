@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run format)",
+      "Bash(npm run format:check)",
+      "Bash(npm run seed)",
+      "Bash(npx tsx:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma studio)",
+      "Bash(npx prisma db seed)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker compose down)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose ps)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(npx prisma migrate reset:*)",
+      "Bash(npx prisma db push --force-reset:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(docker compose down --volumes:*)"
+    ]
+  }
+}
