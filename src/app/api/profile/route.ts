@@ -57,7 +57,7 @@ const updateProfileSchema = z.object({
     .transform((v) => v.trim())
     .nullable()
     .optional(),
-  model: z.string().optional(),
+  model: z.enum(["claude-sonnet-4-20250514", "claude-opus-4-20250514"]).optional(),
 });
 
 export async function PATCH(req: NextRequest) {

@@ -1,8 +1,331 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import type { PecaDetail, Message } from "../harness-shell";
 import { Button } from "@/components/ui/button";
+
+/* ─── CaseData JSON → readable card ─── */
+
+interface CaseDataParty {
+  nome?: string;
+  descricao?: string;
+}
+
+interface CaseDataJson {
+  tribunal?: string;
+  juizo?: string;
+  processo_cautelar?: string | null;
+  processo?: string | null;
+  // ACPAD
+  autor?: CaseDataParty;
+  re?: CaseDataParty;
+  // CAUTELAR
+  requerente?: CaseDataParty;
+  requerida?: CaseDataParty;
+  requisitos_114?: { providencia_adotada?: string; acao_dependente?: string };
+  subtipo_acao?: string;
+  // EXECUCAO
+  exequente?: CaseDataParty;
+  executada?: CaseDataParty;
+  tipo_execucao?: string;
+  modulos_direito?: string[];
+  dispositivo_sentenca?: string;
+  data_transito?: string;
+  data_notificacao?: string;
+  dominio?: string;
+  // Shared
+  tipo_acao?: string;
+  base_legal?: string;
+  modules_active?: string[];
+  tempestividade_ativa?: boolean;
+  blocos_direito?: string[];
+  cronologia?: { data?: string; facto?: string }[];
+  documentos?: string[];
+  prova_testemunhal?: { nome?: string; morada?: string; facto?: string }[] | null;
+  prova_pericial?: string | null;
+  [key: string]: unknown;
+}
+
+function isCaseData(obj: unknown): obj is CaseDataJson {
+  if (!obj || typeof obj !== "object") return false;
+  const o = obj as Record<string, unknown>;
+  // All 3 types have "tribunal" + at least one party key
+  return "tribunal" in o && ("autor" in o || "requerente" in o || "exequente" in o);
+}
+
+function PartyRow({
+  label: lbl,
+  party,
+  cls,
+}: {
+  label: string;
+  party: CaseDataParty;
+  cls: string;
+}) {
+  return (
+    <div className={cls}>
+      <div className="text-[0.6rem] font-mono font-semibold uppercase tracking-wider text-primary/70 mb-0.5">
+        {lbl}
+      </div>
+      <div className="text-sm leading-relaxed">
+        <div className="font-semibold">{party.nome}</div>
+        {party.descricao && (
+          <div className="text-muted-foreground text-xs mt-0.5">{party.descricao}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CaseDataCard({ data }: { data: CaseDataJson }) {
+  const L = "text-[0.6rem] font-mono font-semibold uppercase tracking-wider text-primary/70 mb-0.5";
+  const V = "text-sm leading-relaxed";
+  const S = "py-2";
+
+  // Resolve party fields across ACPAD / CAUTELAR / EXECUCAO
+  const partyA = data.autor || data.requerente || data.exequente;
+  const partyB = data.re || data.requerida || data.executada;
+  const labelA = data.autor ? "Autor" : data.requerente ? "Requerente" : "Exequente";
+  const labelB = data.re ? "Re" : data.requerida ? "Requerida" : "Executada";
+
+  // Title varies by type
+  const isCautelar = !!data.requerente;
+  const isExecucao = !!data.exequente;
+  const title = isExecucao
+    ? "Plano — Execucao de Sentenca"
+    : isCautelar
+      ? "Plano — Providencia Cautelar"
+      : "Plano — ACPAD";
+
+  return (
+    <div className="rounded-sm border border-primary/30 bg-card/80 overflow-hidden my-2">
+      <div className="px-4 py-2 bg-primary/10 border-b border-primary/30">
+        <span className="text-[0.65rem] font-mono font-bold uppercase tracking-widest text-primary">
+          {title}
+        </span>
+      </div>
+      <div className="px-4 divide-y divide-border/30">
+        {data.tribunal && (
+          <div className={S}>
+            <div className={L}>Tribunal</div>
+            <div className={V}>{data.tribunal}</div>
+          </div>
+        )}
+        {data.juizo && (
+          <div className={S}>
+            <div className={L}>Juizo</div>
+            <div className={V}>{data.juizo}</div>
+          </div>
+        )}
+        {(data.processo_cautelar || data.processo) && (
+          <div className={S}>
+            <div className={L}>{isExecucao ? "Processo" : "Processo cautelar"}</div>
+            <div className={V}>{data.processo || data.processo_cautelar}</div>
+          </div>
+        )}
+        {partyA && <PartyRow label={labelA} party={partyA} cls={S} />}
+        {partyB && <PartyRow label={labelB} party={partyB} cls={S} />}
+        {data.tipo_acao && (
+          <div className={S}>
+            <div className={L}>Tipo de acao</div>
+            <div className={V}>
+              {data.tipo_acao}
+              {data.subtipo_acao && (
+                <span className="text-muted-foreground"> — {data.subtipo_acao}</span>
+              )}
+            </div>
+          </div>
+        )}
+        {data.tipo_execucao && (
+          <div className={S}>
+            <div className={L}>Tipo de execucao</div>
+            <div className={V}>{data.tipo_execucao}</div>
+          </div>
+        )}
+        {data.base_legal && (
+          <div className={S}>
+            <div className={L}>Base legal</div>
+            <div className={V}>{data.base_legal}</div>
+          </div>
+        )}
+        {data.requisitos_114 && (
+          <div className={S}>
+            <div className={L}>Requisitos art. 114.o CPTA</div>
+            <div className="text-xs space-y-1 mt-1">
+              {data.requisitos_114.providencia_adotada && (
+                <div>
+                  <span className="text-primary/70 font-semibold">Providencia:</span>{" "}
+                  {data.requisitos_114.providencia_adotada}
+                </div>
+              )}
+              {data.requisitos_114.acao_dependente && (
+                <div>
+                  <span className="text-primary/70 font-semibold">Acao dependente:</span>{" "}
+                  {data.requisitos_114.acao_dependente}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {data.dispositivo_sentenca && (
+          <div className={S}>
+            <div className={L}>Dispositivo da sentenca</div>
+            <div className="text-xs mt-1">{data.dispositivo_sentenca}</div>
+          </div>
+        )}
+        {data.data_transito && (
+          <div className={S}>
+            <div className={L}>Data transito em julgado</div>
+            <div className={V}>{data.data_transito}</div>
+          </div>
+        )}
+        {data.modules_active && data.modules_active.length > 0 && (
+          <div className={S}>
+            <div className={L}>Modulos ativos</div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {data.modules_active.map((m) => (
+                <span
+                  key={m}
+                  className="px-2 py-0.5 text-xs font-mono rounded-sm bg-primary/15 text-primary border border-primary/20"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.modulos_direito && data.modulos_direito.length > 0 && (
+          <div className={S}>
+            <div className={L}>Modulos de direito</div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {data.modulos_direito.map((m) => (
+                <span
+                  key={m}
+                  className="px-2 py-0.5 text-xs font-mono rounded-sm bg-primary/15 text-primary border border-primary/20"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Tempestividade only for ACPAD */}
+        {!isCautelar && !isExecucao && (
+          <div className={S}>
+            <div className={L}>Tempestividade (Fase 3)</div>
+            <div className={V}>
+              {data.tempestividade_ativa ? (
+                <span className="text-harness-green font-semibold">Ativa</span>
+              ) : (
+                <span className="text-muted-foreground">Nao ativa — Fase 3 sera saltada</span>
+              )}
+            </div>
+          </div>
+        )}
+        {data.blocos_direito && data.blocos_direito.length > 0 && (
+          <div className={S}>
+            <div className={L}>Blocos de direito</div>
+            <div className={V}>{data.blocos_direito.join(", ")}</div>
+          </div>
+        )}
+        {data.cronologia && data.cronologia.length > 0 && (
+          <div className={S}>
+            <div className={L}>Cronologia</div>
+            <div className="space-y-1 mt-1">
+              {data.cronologia.map((c, i) => (
+                <div key={i} className="flex gap-3 text-xs">
+                  <span className="font-mono text-primary/70 shrink-0 tabular-nums">{c.data}</span>
+                  <span className="text-foreground">{c.facto}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.documentos && data.documentos.length > 0 && (
+          <div className={S}>
+            <div className={L}>Documentos</div>
+            <div className="space-y-0.5 mt-1">
+              {data.documentos.map((d, i) => (
+                <div key={i} className="text-xs">
+                  {d}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.prova_testemunhal && data.prova_testemunhal.length > 0 && (
+          <div className={S}>
+            <div className={L}>Prova testemunhal</div>
+            <div className="space-y-1.5 mt-1">
+              {data.prova_testemunhal.map((t, i) => (
+                <div key={i} className="text-xs">
+                  <span className="font-semibold">{t.nome}</span>
+                  {t.morada && <span className="text-muted-foreground"> — {t.morada}</span>}
+                  {t.facto && <div className="text-muted-foreground ml-2">Prova: {t.facto}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Splits message content: text parts are rendered as-is,
+ * ```json blocks that look like caseData become a CaseDataCard.
+ */
+function MessageContent({ content }: { content: string }) {
+  const parts = useMemo(() => {
+    const result: { type: "text" | "casedata" | "code"; value: string; parsed?: CaseDataJson }[] =
+      [];
+    const regex = /```json\s*\n([\s\S]*?)\n```/g;
+    let last = 0;
+    let match;
+
+    while ((match = regex.exec(content)) !== null) {
+      if (match.index > last) {
+        result.push({ type: "text", value: content.slice(last, match.index) });
+      }
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (isCaseData(parsed)) {
+          result.push({ type: "casedata", value: match[0], parsed });
+        } else {
+          result.push({ type: "code", value: match[0] });
+        }
+      } catch {
+        result.push({ type: "code", value: match[0] });
+      }
+      last = match.index + match[0].length;
+    }
+
+    if (last < content.length) {
+      result.push({ type: "text", value: content.slice(last) });
+    }
+
+    return result;
+  }, [content]);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.type === "casedata" && part.parsed) {
+          return <CaseDataCard key={i} data={part.parsed} />;
+        }
+        if (part.type === "code") {
+          return (
+            <pre key={i} className="text-xs bg-muted/50 rounded-sm p-2 overflow-x-auto">
+              {part.value}
+            </pre>
+          );
+        }
+        return <span key={i}>{part.value}</span>;
+      })}
+    </>
+  );
+}
 
 interface ChatMessagesProps {
   peca: PecaDetail;
@@ -244,7 +567,7 @@ export function ChatMessages({
                   : "mr-4 bg-card border-l-2 border-primary/50"
               }`}
             >
-              {msg.content}
+              <MessageContent content={msg.content} />
             </div>
           </div>
         ))}

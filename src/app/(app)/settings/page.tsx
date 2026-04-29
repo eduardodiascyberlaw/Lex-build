@@ -65,6 +65,7 @@ export default function SettingsPage() {
       name: formData.get("name") as string,
       cpOA: formData.get("cpOA") as string,
       firmName: (formData.get("firmName") as string) || null,
+      model: formData.get("model") as string,
     };
 
     try {
@@ -168,6 +169,27 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="firmName">Escritório</Label>
               <Input id="firmName" name="firmName" defaultValue={profile?.firmName ?? ""} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="model">Modelo Claude</Label>
+              <select
+                id="model"
+                name="model"
+                defaultValue={profile?.model ?? "claude-sonnet-4-20250514"}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="claude-sonnet-4-20250514">
+                  Sonnet 4 — rapido, $0.33/peticao (~$3+$15/M tokens)
+                </option>
+                <option value="claude-opus-4-20250514">
+                  Opus 4 — maxima qualidade, $1.65/peticao (~$15+$75/M tokens)
+                </option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                O modelo e usado em todas as fases da peticao. Custos cobrados directamente pela
+                Anthropic na sua API key.
+              </p>
             </div>
 
             <Button type="submit" disabled={saving}>
