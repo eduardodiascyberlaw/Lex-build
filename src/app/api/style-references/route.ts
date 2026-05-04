@@ -7,8 +7,19 @@ import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
 const logger = createLogger("api-style-references");
 
 const createStyleRefSchema = z.object({
-  pecaType: z.enum(["ACPAD", "CAUTELAR", "EXECUCAO"]),
-  section: z.enum(["PRESSUPOSTOS", "FACTOS", "TEMPESTIVIDADE", "DIREITO", "PEDIDOS"]),
+  pecaType: z.enum(["ACPAD", "CAUTELAR", "EXECUCAO", "RECURSO"]),
+  section: z.enum([
+    "PRESSUPOSTOS",
+    "FACTOS",
+    "TEMPESTIVIDADE",
+    "DIREITO",
+    "PEDIDOS",
+    "REQUERIMENTO",
+    "OBJETO",
+    "IMPUGNACAO_FACTO",
+    "DIREITO_RECURSO",
+    "CONCLUSOES_RECURSO",
+  ]),
   beforeText: z.string(),
   afterText: z.string(),
   notes: z.string().optional(),

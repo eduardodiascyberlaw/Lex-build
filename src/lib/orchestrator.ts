@@ -2,6 +2,8 @@ import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("orchestrator");
 
+export type PecaTypeStr = "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO";
+
 export interface PhaseTransition {
   approvedStatus: string;
   nextStatus: string;
@@ -38,11 +40,18 @@ const EXECUCAO_STYLE_SECTIONS: Record<number, string> = {
   5: "PEDIDOS",
 };
 
-export function getPhaseToStyleSection(
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"
-): Record<number, string> {
+const RECURSO_STYLE_SECTIONS: Record<number, string> = {
+  1: "REQUERIMENTO",
+  2: "OBJETO",
+  3: "IMPUGNACAO_FACTO",
+  4: "DIREITO_RECURSO",
+  5: "CONCLUSOES_RECURSO",
+};
+
+export function getPhaseToStyleSection(pecaType: PecaTypeStr): Record<number, string> {
   if (pecaType === "CAUTELAR") return CAUTELAR_STYLE_SECTIONS;
   if (pecaType === "EXECUCAO") return EXECUCAO_STYLE_SECTIONS;
+  if (pecaType === "RECURSO") return RECURSO_STYLE_SECTIONS;
   return ACPAD_STYLE_SECTIONS;
 }
 
@@ -73,9 +82,19 @@ const EXECUCAO_PHASE_NAMES: Record<number, string> = {
   5: "Pedidos e documentos",
 };
 
-export function getPhaseNames(pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"): Record<number, string> {
+const RECURSO_PHASE_NAMES: Record<number, string> = {
+  0: "Viabilidade e teses",
+  1: "Requerimento de interposição",
+  2: "Objeto e delimitação",
+  3: "Impugnação da matéria de facto",
+  4: "Matéria de direito",
+  5: "Conclusões",
+};
+
+export function getPhaseNames(pecaType: PecaTypeStr): Record<number, string> {
   if (pecaType === "CAUTELAR") return CAUTELAR_PHASE_NAMES;
   if (pecaType === "EXECUCAO") return EXECUCAO_PHASE_NAMES;
+  if (pecaType === "RECURSO") return RECURSO_PHASE_NAMES;
   return ACPAD_PHASE_NAMES;
 }
 
@@ -94,11 +113,12 @@ export function getTransition(phase: number): PhaseTransition | null {
  * Determine the next phase, accounting for skip logic.
  * ACPAD: skip phase 3 if tempestividade not active.
  * CAUTELAR: always skip phases 1 and 3.
+ * RECURSO: skip phase 3 if impugna_factos is false.
  */
 export function getNextPhase(
   currentPhase: number,
   caseData: Record<string, unknown> | null,
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
+  pecaType: PecaTypeStr = "ACPAD"
 ): { nextStatus: string; nextPhase: number; skippedPhases: number[] } {
   const transition = PHASE_TRANSITIONS[currentPhase];
   if (!transition) {
@@ -131,6 +151,14 @@ export function getNextPhase(
       nextPhase = 4;
       logger.info("Phase 3 skipped (EXECUCAO — no tempestividade)");
     }
+  } else if (pecaType === "RECURSO") {
+    // RECURSO: Phase 2 → skip phase 3 if no facto impugnation
+    if (currentPhase === 2 && !caseData?.impugna_factos) {
+      skippedPhases.push(3);
+      nextStatus = "PHASE_4_ACTIVE";
+      nextPhase = 4;
+      logger.info("Phase 3 skipped (RECURSO — impugna_factos not active)");
+    }
   } else {
     // ACPAD: Phase 2 → check if Phase 3 should be skipped
     if (currentPhase === 2 && !caseData?.tempestividade_ativa) {
@@ -150,7 +178,7 @@ export function getNextPhase(
 export function shouldSkipPhase(
   phase: number,
   caseData: Record<string, unknown> | null,
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
+  pecaType: PecaTypeStr = "ACPAD"
 ): boolean {
   if (pecaType === "CAUTELAR") {
     return phase === 1 || phase === 3;
@@ -158,6 +186,10 @@ export function shouldSkipPhase(
   if (pecaType === "EXECUCAO") {
     return phase === 3;
   }
+  if (pecaType === "RECURSO") {
+    return phase === 3 && !caseData?.impugna_factos;
+  }
+  // ACPAD
   if (phase === 3 && !caseData?.tempestividade_ativa) {
     return true;
   }

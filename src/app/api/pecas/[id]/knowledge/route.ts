@@ -117,7 +117,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Count module-specific content
     const modules = await prisma.thematicModule.findMany({
-      where: { isActive: true, pecaTypes: { has: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" } },
+      where: { isActive: true, pecaTypes: { has: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO" } },
       select: {
         code: true,
         name: true,
@@ -142,7 +142,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const styleRefs = await prisma.styleReference.count({
       where: {
         userId: auth.user.id,
-        pecaType: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO",
+        pecaType: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO",
         isActive: true,
       },
     });

@@ -70,6 +70,7 @@ enum PecaType {
   ACPAD
   CAUTELAR
   EXECUCAO
+  RECURSO
 }
 
 enum PecaStatus {
@@ -284,4 +285,10 @@ enum StyleSection {
   TEMPESTIVIDADE
   DIREITO
   PEDIDOS
+  // RECURSO-specific sections
+  REQUERIMENTO
+  OBJETO
+  IMPUGNACAO_FACTO
+  DIREITO_RECURSO
+  CONCLUSOES_RECURSO
 }

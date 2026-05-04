@@ -67,7 +67,7 @@ export async function POST(
     const { systemPrompt, userPrompt } = await buildContext({
       pecaId: id,
       userId: auth.user.id,
-      pecaType: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO",
+      pecaType: peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO",
       phase,
       caseData: peca.caseData as Record<string, unknown> | null,
       documentsText,

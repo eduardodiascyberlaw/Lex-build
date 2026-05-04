@@ -26,6 +26,13 @@ const EXECUCAO_SCRIPT_PATH = join(
   "scripts",
   "gerar_execucao.py"
 );
+const RECURSO_SCRIPT_PATH = join(
+  process.cwd(),
+  "knowledge",
+  "recurso",
+  "scripts",
+  "gerar_recurso_docx.py"
+);
 
 interface DocxInput {
   pecaId: string;
@@ -63,6 +70,11 @@ export async function generateDocx(input: DocxInput): Promise<string> {
   // Dispatch EXECUCAO to dedicated generator
   if (peca.type === "EXECUCAO") {
     return generateExecucaoDocx(pecaId, userId);
+  }
+
+  // Dispatch RECURSO to dedicated generator
+  if (peca.type === "RECURSO") {
+    return generateRecursoDocx(pecaId, userId);
   }
 
   const caseData = peca.caseData as Record<string, unknown> | null;
@@ -467,4 +479,116 @@ function formatDate(): string {
   const month = months[now.getMonth()];
   const year = now.getFullYear();
   return `Lisboa, ${day} de ${month} de ${year}`;
+}
+
+/**
+ * Generate the final .docx for a completed RECURSO DE APELAÇÃO peca.
+ *
+ * Phases: 1=requerimento, 2=objeto, 3=facto (optional), 4=direito, 5=conclusoes
+ * Phase 3 may be skipped when impugna_factos === false.
+ */
+async function generateRecursoDocx(pecaId: string, userId: string): Promise<string> {
+  const peca = await prisma.peca.findFirstOrThrow({
+    where: { id: pecaId, userId },
+    include: {
+      phases: { where: { status: "APPROVED" }, orderBy: { number: "asc" } },
+      user: {
+        select: { name: true, cpOA: true, templates: { where: { isActive: true }, take: 1 } },
+      },
+    },
+  });
+
+  const caseData = peca.caseData as Record<string, unknown> | null;
+  if (!caseData) {
+    throw new Error("Peca has no caseData (Phase 0 not completed)");
+  }
+
+  const phaseContent: Record<number, string> = {};
+  for (const phase of peca.phases) {
+    if (phase.content) {
+      phaseContent[phase.number] = phase.content;
+    }
+  }
+
+  const docxData = {
+    tribunal: caseData.tribunal ?? "Tribunal Administrativo e Fiscal de Lisboa",
+    tribunal_ad_quem: caseData.tribunal_ad_quem ?? "Tribunal Central Administrativo Sul",
+    processo: caseData.processo ?? null,
+    jurisdicao: (caseData.jurisdicao as string) ?? "administrativa",
+    recorrente: caseData.recorrente ?? { nome: "RECORRENTE", qualidade: "Autor" },
+    recorrido: caseData.recorrido ?? {
+      nome: "AGÊNCIA PARA A INTEGRAÇÃO, MIGRAÇÕES E ASILO, I.P.",
+      qualidade: "Réu",
+    },
+    requerimento: phaseContent[1] ?? "",
+    objeto_delimitacao: phaseContent[2] ?? "",
+    impugna_factos: !!caseData.impugna_factos,
+    impugnacao_facto: caseData.impugna_factos ? (phaseContent[3] ?? "") : "",
+    materia_direito: phaseContent[4] ?? "",
+    conclusoes: phaseContent[5] ?? "",
+    data: formatDate(),
+    advogado_nome: peca.user.name ?? "Eduardo S Dias",
+    advogado_cp: peca.user.cpOA ?? "CP 59368P OA",
+  };
+
+  const tempDir = join(tmpdir(), `lexbuild-recurso-${randomUUID()}`);
+  await mkdir(tempDir, { recursive: true });
+
+  const jsonPath = join(tempDir, "dados.json");
+  const templatePath = join(tempDir, "template.docx");
+  const outputPath = join(tempDir, "recurso_final.docx");
+
+  try {
+    await writeFile(jsonPath, JSON.stringify(docxData, null, 2), "utf-8");
+
+    const template = peca.user.templates[0];
+    if (!template) {
+      throw new Error("Utilizador não tem template .docx configurado. Faça upload em Definições.");
+    }
+    const templateBuffer = await getFromS3(template.s3Key);
+    await writeFile(templatePath, templateBuffer);
+
+    const { stdout, stderr } = await execFileAsync(
+      "python3",
+      [RECURSO_SCRIPT_PATH, "--json", jsonPath, "--template", templatePath, "--output", outputPath],
+      { timeout: 30000 }
+    );
+
+    if (stderr) logger.warn({ stderr }, "gerar_recurso_docx.py stderr");
+    logger.info({ stdout: stdout.trim() }, "RECURSO DOCX generated");
+
+    const { readFile } = await import("fs/promises");
+    const docxBuffer = await readFile(outputPath);
+    const s3Key = await uploadToS3(
+      docxBuffer,
+      `recurso_${pecaId}.docx`,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      `pecas/${pecaId}`
+    );
+
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { outputS3Key: s3Key, status: "COMPLETED" },
+    });
+
+    logger.info({ pecaId, s3Key }, "RECURSO DOCX uploaded and peca completed");
+    return s3Key;
+  } catch (err) {
+    await prisma.peca.update({
+      where: { id: pecaId },
+      data: { status: "ERROR" },
+    });
+    logger.error({ err, pecaId }, "RECURSO DOCX generation failed");
+    throw err;
+  } finally {
+    try {
+      await unlink(jsonPath).catch(() => {});
+      await unlink(templatePath).catch(() => {});
+      await unlink(outputPath).catch(() => {});
+      const { rmdir } = await import("fs/promises");
+      await rmdir(tempDir).catch(() => {});
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
 }

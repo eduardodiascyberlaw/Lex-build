@@ -93,6 +93,55 @@ const modules = [
     pecaTypes: ["EXECUCAO" as const],
     sortOrder: 11,
   },
+  // ─── MÓDULOS RECURSO DE APELAÇÃO ───
+  {
+    code: "sistema-recursorio",
+    name: "Sistema recursório geral",
+    description:
+      "Teoria geral dos recursos: revisão/reponderação, legitimidade, prazo, efeitos. CPC arts. 627.º-670.º.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 20,
+  },
+  {
+    code: "impugnacao-facto",
+    name: "Impugnação da matéria de facto",
+    description:
+      "Ónus do art. 640.º CPC: especificar factos, meios probatórios e decisão correta. Técnica e jurisprudência.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 21,
+  },
+  {
+    code: "conclusoes-tecnica",
+    name: "Técnica das conclusões",
+    description:
+      "Art. 639.º CPC: conclusões como delimitação do objeto. Requisitos, extensão e jurisprudência sobre prolixidade.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 22,
+  },
+  {
+    code: "novos-meios-prova",
+    name: "Novos meios de prova em apelação",
+    description:
+      "Art. 662.º n.º 2 CPC: produção de nova prova no tribunal ad quem. Requisito de dúvida fundada.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 23,
+  },
+  {
+    code: "jurisdicao-administrativa-recurso",
+    name: "Recurso em jurisdição administrativa",
+    description:
+      "CPTA arts. 140.º-148.º: especificidades do recurso para TCA Sul/Norte. Prazos, subida, efeito suspensivo.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 24,
+  },
+  {
+    code: "jurisdicao-laboral-recurso",
+    name: "Recurso em jurisdição laboral",
+    description:
+      "CPT arts. 79.º-81.º: especificidades do recurso laboral. Prazo de 15 dias, efeito devolutivo regra.",
+    pecaTypes: ["RECURSO" as const],
+    sortOrder: 25,
+  },
 ];
 
 // ─── LEGISLAÇÃO CORE ───

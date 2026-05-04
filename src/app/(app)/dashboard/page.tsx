@@ -50,6 +50,12 @@ export default async function DashboardPage() {
           description="Requerimento de execução de sentença administrativa. Arts. 157.º-179.º CPTA."
           available
         />
+        <PecaTypeCard
+          type="RECURSO"
+          title="Recurso de Apelação"
+          description="Recurso ordinário para tribunal superior — administrativo (CPTA), cível (CPC) e laboral (CPT). Requerimento + alegações + conclusões."
+          available
+        />
       </div>
 
       {recentPecas.length > 0 && (

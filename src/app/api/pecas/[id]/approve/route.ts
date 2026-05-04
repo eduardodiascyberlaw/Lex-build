@@ -110,7 +110,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 | "FACTOS"
                 | "TEMPESTIVIDADE"
                 | "DIREITO"
-                | "PEDIDOS",
+                | "PEDIDOS"
+                | "REQUERIMENTO"
+                | "OBJETO"
+                | "IMPUGNACAO_FACTO"
+                | "DIREITO_RECURSO"
+                | "CONCLUSOES_RECURSO",
               beforeText: phase.content,
               afterText: finalContent!,
               notes: data.styleRefNotes,
@@ -124,7 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Handle phase skips based on pecaType and caseData
       let nextStatus = transition.next;
       let nextPhase = transition.nextPhase;
-      const pecaType = peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO";
+      const pecaType = peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO";
       const caseDataForSkip = peca.caseData as Record<string, unknown> | null;
 
       if (pecaType === "CAUTELAR") {
@@ -146,6 +151,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       } else if (pecaType === "EXECUCAO") {
         // EXECUCAO: always skip phase 3 (after phase 2)
         if (currentPhase === 2) {
+          await tx.phase.create({
+            data: { pecaId: id, number: 3, status: "SKIPPED" },
+          });
+          nextStatus = "PHASE_4_ACTIVE";
+          nextPhase = 4;
+        }
+      } else if (pecaType === "RECURSO") {
+        // RECURSO: skip phase 3 if impugna_factos not active
+        if (currentPhase === 2 && !caseDataForSkip?.impugna_factos) {
           await tx.phase.create({
             data: { pecaId: id, number: 3, status: "SKIPPED" },
           });

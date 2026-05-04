@@ -21,6 +21,8 @@ interface StyleRef {
 const PECA_TYPES = [
   { value: "ACPAD", label: "ACPAD" },
   { value: "CAUTELAR", label: "Cautelar" },
+  { value: "EXECUCAO", label: "Execução" },
+  { value: "RECURSO", label: "Recurso de Apelação" },
 ];
 
 const SECTIONS = [
@@ -29,6 +31,11 @@ const SECTIONS = [
   { value: "TEMPESTIVIDADE", label: "Tempestividade" },
   { value: "DIREITO", label: "Direito" },
   { value: "PEDIDOS", label: "Pedidos" },
+  { value: "REQUERIMENTO", label: "Requerimento (Recurso)" },
+  { value: "OBJETO", label: "Objeto e Delimitação (Recurso)" },
+  { value: "IMPUGNACAO_FACTO", label: "Impugnação da Matéria de Facto (Recurso)" },
+  { value: "DIREITO_RECURSO", label: "Matéria de Direito (Recurso)" },
+  { value: "CONCLUSOES_RECURSO", label: "Conclusões (Recurso)" },
 ];
 
 export default function StylePage() {

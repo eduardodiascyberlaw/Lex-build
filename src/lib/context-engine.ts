@@ -2,18 +2,25 @@ import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { readFile } from "fs/promises";
 import path from "path";
+import type { PecaTypeStr } from "@/lib/orchestrator";
 
 const logger = createLogger("context-engine");
 
-function getKnowledgeDir(pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO"): string {
+function getKnowledgeDir(pecaType: PecaTypeStr): string {
   const subdir =
-    pecaType === "CAUTELAR" ? "cautelar" : pecaType === "EXECUCAO" ? "execucao" : "acpad";
+    pecaType === "CAUTELAR"
+      ? "cautelar"
+      : pecaType === "EXECUCAO"
+        ? "execucao"
+        : pecaType === "RECURSO"
+          ? "recurso"
+          : "acpad";
   return path.join(process.cwd(), "knowledge", subdir);
 }
 
 async function loadKnowledgeFile(
   filename: string,
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO" = "ACPAD"
+  pecaType: PecaTypeStr = "ACPAD"
 ): Promise<string> {
   try {
     return await readFile(path.join(getKnowledgeDir(pecaType), filename), "utf-8");
@@ -28,7 +35,7 @@ async function loadKnowledgeFile(
  */
 async function loadStyleRefs(
   userId: string,
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO",
+  pecaType: PecaTypeStr,
   section: string
 ): Promise<string> {
   const refs = await prisma.styleReference.findMany({
@@ -179,7 +186,7 @@ async function loadModuleContent(
 export interface ContextEngineInput {
   pecaId: string;
   userId: string;
-  pecaType: "ACPAD" | "CAUTELAR" | "EXECUCAO";
+  pecaType: PecaTypeStr;
   phase: number;
   caseData: Record<string, unknown> | null;
   documentsText: string;
@@ -467,6 +474,143 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
 
         userParts.push(
           `\nRedige a Secção IV — DO PEDIDO com pedidos, lista de documentos, data e assinatura.`
+        );
+        break;
+      }
+
+      default:
+        logger.error({ phase, pecaType }, "Unknown phase number");
+        throw new Error(`Unknown phase: ${phase}`);
+    }
+  } else if (pecaType === "RECURSO") {
+    // ─── RECURSO DE APELAÇÃO ───────────────────────────────────────────────
+    switch (phase) {
+      case 0: {
+        // Viabilidade e teses — lê sistema-recursorio.md obrigatoriamente
+        const phase0Instructions = await loadKnowledgeFile("phase0-instructions.md", pecaType);
+        const sistemaRef = await loadKnowledgeFile("references/sistema-recursorio.md", pecaType);
+        systemParts.push(phase0Instructions);
+        if (sistemaRef) systemParts.push(`## Referência: Sistema recursório\n\n${sistemaRef}`);
+
+        const allModules = await prisma.thematicModule.findMany({
+          where: { isActive: true, pecaTypes: { has: pecaType } },
+          select: { code: true, name: true, description: true },
+          orderBy: { sortOrder: "asc" },
+        });
+        let catalog = `\n## Catálogo de módulos temáticos disponíveis\n\n`;
+        for (const m of allModules) {
+          catalog += `- **${m.code}** — ${m.name}: ${m.description ?? ""}\n`;
+        }
+        systemParts.push(catalog);
+        userParts.push(`## Documentos do caso\n\n${documentsText}`);
+        break;
+      }
+
+      case 1: {
+        // Requerimento de interposição
+        const agent = await loadKnowledgeFile("agents/requerimento.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "REQUERIMENTO");
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        userParts.push(`\nRedige o Requerimento de Interposição do Recurso de Apelação.`);
+        break;
+      }
+
+      case 2: {
+        // Objeto e delimitação do recurso
+        const agent = await loadKnowledgeFile("agents/objeto-delimitacao.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "OBJETO");
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[1])
+          userParts.push(`## Requerimento aprovado\n\n${previousOutputs[1]}`);
+        userParts.push(`\nRedige a secção "OBJETO E DELIMITAÇÃO DO RECURSO" das alegações.`);
+        break;
+      }
+
+      case 3: {
+        // Impugnação da matéria de facto (condicional — skip se impugna_factos === false)
+        const agent = await loadKnowledgeFile("agents/facto-recurso.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "IMPUGNACAO_FACTO");
+        const factRef = await loadKnowledgeFile("references/materia-de-facto.md", pecaType);
+        const novaProvaRef = caseData?.novos_meios_prova
+          ? await loadKnowledgeFile("references/novos-meios-prova.md", pecaType)
+          : "";
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[2]) userParts.push(`## Objeto e delimitação\n\n${previousOutputs[2]}`);
+        if (factRef) userParts.push(`## Referência: Impugnação da matéria de facto\n\n${factRef}`);
+        if (novaProvaRef)
+          userParts.push(`## Referência: Novos meios de prova\n\n${novaProvaRef}`);
+        userParts.push(
+          `\nRedige a secção "IMPUGNAÇÃO DA MATÉRIA DE FACTO" seguindo o ónus do art. 640.º n.º 1 CPC.`
+        );
+        break;
+      }
+
+      case 4: {
+        // Matéria de direito — teses identificadas na Fase 0
+        const agent = await loadKnowledgeFile("agents/direito-recurso.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "DIREITO_RECURSO");
+        const coreLeg = await loadCoreLegislation();
+        const moduleContent = await loadModuleContent(activeModules, true, true, userId);
+
+        // Jurisdiction-specific references
+        const jurisdicao = (caseData?.jurisdicao as string) ?? "";
+        const jurisAdmRef =
+          jurisdicao === "administrativa"
+            ? await loadKnowledgeFile("references/jurisdicao-administrativa.md", pecaType)
+            : "";
+        const jurisLabRef =
+          jurisdicao === "laboral"
+            ? await loadKnowledgeFile("references/jurisdicao-laboral.md", pecaType)
+            : "";
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[2]) userParts.push(`## Objeto e delimitação\n\n${previousOutputs[2]}`);
+        if (previousOutputs[3])
+          userParts.push(`## Impugnação da matéria de facto\n\n${previousOutputs[3]}`);
+        if (coreLeg) userParts.push(coreLeg);
+        if (moduleContent) userParts.push(moduleContent);
+        if (jurisAdmRef)
+          userParts.push(
+            `## Referência: Especificidades CPTA (arts. 140.º-148.º)\n\n${jurisAdmRef}`
+          );
+        if (jurisLabRef)
+          userParts.push(`## Referência: Especificidades CPT (arts. 79.º-81.º)\n\n${jurisLabRef}`);
+        userParts.push(`\nRedige a secção "MATÉRIA DE DIREITO" com as teses identificadas na Fase 0.`);
+        break;
+      }
+
+      case 5: {
+        // Conclusões + pedido final
+        const agent = await loadKnowledgeFile("agents/conclusoes-recurso.md", pecaType);
+        const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
+        const styleRefs = await loadStyleRefs(userId, pecaType, "CONCLUSOES_RECURSO");
+        const conclusoesRef = await loadKnowledgeFile("references/conclusoes.md", pecaType);
+        systemParts.push(agent, antiAi, styleRefs);
+
+        userParts.push(`## Documentos\n\n${documentsText}`);
+        if (caseData) userParts.push(`## Plano do caso\n\n${JSON.stringify(caseData, null, 2)}`);
+        if (previousOutputs[2]) userParts.push(`## Objeto e delimitação\n\n${previousOutputs[2]}`);
+        if (previousOutputs[3])
+          userParts.push(`## Impugnação da matéria de facto\n\n${previousOutputs[3]}`);
+        if (previousOutputs[4]) userParts.push(`## Matéria de direito\n\n${previousOutputs[4]}`);
+        if (conclusoesRef) userParts.push(`## Referência: Técnica das conclusões\n\n${conclusoesRef}`);
+        userParts.push(
+          `\nRedige as CONCLUSÕES (15-35 proposições numeradas em I., II., III., ...) e o Pedido Final.`
         );
         break;
       }
