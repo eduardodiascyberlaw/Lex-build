@@ -34,6 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const category = (formData.get("category") as string | null) ?? null;
 
     if (!file) {
       return errorResponse("Ficheiro em falta", 400, "NO_FILE");
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         filename: file.name,
         s3Key,
         mimeType: file.type,
+        category,
         textContent,
       },
       select: {

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const peca = await prisma.peca.findFirst({
     where: { id, userId: auth.user.id },
     include: {
-      uploads: { select: { textContent: true, filename: true } },
+      uploads: { select: { textContent: true, filename: true, category: true } },
       phases: { orderBy: { number: "asc" } },
       messages: { where: { phase: { gte: 0 } }, orderBy: { createdAt: "asc" } },
     },
@@ -68,7 +68,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Build documents text
   const documentsText = peca.uploads
-    .map((u) => `### ${u.filename}\n${u.textContent ?? "(sem texto extraído)"}`)
+    .map((u) => {
+      const label = u.category ? ` [${u.category}]` : "";
+      return `### ${u.filename}${label}\n${u.textContent ?? "(sem texto extraído)"}`;
+    })
     .join("\n\n");
 
   // Build previous outputs
