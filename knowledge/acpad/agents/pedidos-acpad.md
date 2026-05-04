@@ -92,7 +92,7 @@ recusatório.
 **Fórmula do pedido b):**
 
 > b) Ser a Ré condenada a praticar o ato de [concessão de autorização de residência /
-> > outro ato devido], ao abrigo do art. [X.º] da Lei n.º 23/2007 [ou outra base legal],
+> outro ato devido], ao abrigo do art. [X.º] da Lei n.º 23/2007 [ou outra base legal],
 > com a consequente emissão do respetivo título de residência em nome do Autor;
 
 **Pedido subsidiário (quando aplicável):**

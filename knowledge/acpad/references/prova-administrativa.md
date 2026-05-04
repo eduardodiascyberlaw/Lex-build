@@ -74,7 +74,7 @@ oficiosamente peritos quando o considera necessário, mas o Autor pode antecipar
 **Fórmula:**
 
 > Requerer-se-á oportunamente a realização de perícia médica [ou: pericial sobre os
-> > documentos juntos em Doc. X] para demonstração de [facto concreto].
+> documentos juntos em Doc. X] para demonstração de [facto concreto].
 
 ### 4. Inspeção judicial (arts. 390.º CC; arts. 490.º e ss. CPC)
 

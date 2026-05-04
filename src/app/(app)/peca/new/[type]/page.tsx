@@ -92,8 +92,16 @@ export default function NewPecaPage() {
         <CardHeader>
           <CardTitle>Documentos do caso</CardTitle>
           <CardDescription>
-            Carregue os documentos relevantes (decisão administrativa, notificação, requerimento,
-            etc.). Formatos: PDF, DOCX, TXT. Máximo 20 MB por ficheiro.
+            {type === "RECURSO" ? (
+              <>
+                Carregue obrigatoriamente: <strong>Sentença recorrida</strong>,{" "}
+                <strong>Petição inicial</strong> e documentos juntados ao processo.
+                A Fase 0 analisa a viabilidade do recurso com base nestes documentos.
+                Formatos: PDF, DOCX, TXT. Máximo 20 MB por ficheiro.
+              </>
+            ) : (
+              "Carregue os documentos relevantes (decisão administrativa, notificação, requerimento, etc.). Formatos: PDF, DOCX, TXT. Máximo 20 MB por ficheiro."
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
