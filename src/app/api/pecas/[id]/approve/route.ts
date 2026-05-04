@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
+import { getPhaseToStyleSection } from "@/lib/orchestrator";
 
 const logger = createLogger("api-peca-approve");
 
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const isEdited = !!data.editedContent;
     const finalContent = data.editedContent ?? phase.content;
 
+    let resolvedNextPhase = transition.nextPhase;
+
     await prisma.$transaction(async (tx) => {
       // Approve current phase
       await tx.phase.update({
@@ -99,7 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       // Save style reference if requested
       if (data.saveAsStyleRef && isEdited && phase.content) {
-        const section = PHASE_TO_STYLE_SECTION[currentPhase];
+        const section = getPhaseToStyleSection(peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO")[currentPhase];
         if (section) {
           await tx.styleReference.create({
             data: {
@@ -129,6 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Handle phase skips based on pecaType and caseData
       let nextStatus = transition.next;
       let nextPhase = transition.nextPhase;
+      resolvedNextPhase = nextPhase; // will be overwritten below if a skip fires
       const pecaType = peca.type as "ACPAD" | "CAUTELAR" | "EXECUCAO" | "RECURSO";
       const caseDataForSkip = peca.caseData as Record<string, unknown> | null;
 
@@ -140,6 +144,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
           nextStatus = "PHASE_2_ACTIVE";
           nextPhase = 2;
+          resolvedNextPhase = 2;
         }
         if (currentPhase === 2) {
           await tx.phase.create({
@@ -147,6 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
           nextStatus = "PHASE_4_ACTIVE";
           nextPhase = 4;
+          resolvedNextPhase = 4;
         }
       } else if (pecaType === "EXECUCAO") {
         // EXECUCAO: always skip phase 3 (after phase 2)
@@ -156,6 +162,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
           nextStatus = "PHASE_4_ACTIVE";
           nextPhase = 4;
+          resolvedNextPhase = 4;
         }
       } else if (pecaType === "RECURSO") {
         // RECURSO: skip phase 3 if impugna_factos not active
@@ -165,6 +172,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
           nextStatus = "PHASE_4_ACTIVE";
           nextPhase = 4;
+          resolvedNextPhase = 4;
         }
       } else {
         // ACPAD: skip phase 3 if tempestividade not active
@@ -174,6 +182,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           });
           nextStatus = "PHASE_4_ACTIVE";
           nextPhase = 4;
+          resolvedNextPhase = 4;
         }
       }
 
@@ -204,7 +213,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       "Phase approved"
     );
 
-    return NextResponse.json({ success: true, nextPhase: transition.nextPhase });
+    return NextResponse.json({ success: true, nextPhase: resolvedNextPhase });
   } catch (err) {
     logger.error({ err, pecaId: id }, "Failed to approve phase");
     return errorResponse("Erro interno", 500, "INTERNAL_ERROR");

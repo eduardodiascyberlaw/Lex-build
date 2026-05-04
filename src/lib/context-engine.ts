@@ -536,6 +536,11 @@ export async function buildContext(input: ContextEngineInput): Promise<ContextEn
 
       case 3: {
         // Impugnação da matéria de facto (condicional — skip se impugna_factos === false)
+        // Guard: this phase should never be active if impugna_factos is false
+        if (!caseData?.impugna_factos) {
+          logger.error({ pecaId: input.pecaId, phase }, "RECURSO phase 3 reached but impugna_factos is false — phase should have been skipped");
+          throw new Error("Fase 3 não aplicável para este recurso (impugna_factos is false)");
+        }
         const agent = await loadKnowledgeFile("agents/facto-recurso.md", pecaType);
         const antiAi = await loadKnowledgeFile("anti-ai-review.md", pecaType);
         const styleRefs = await loadStyleRefs(userId, pecaType, "IMPUGNACAO_FACTO");

@@ -522,8 +522,9 @@ async function generateRecursoDocx(pecaId: string, userId: string): Promise<stri
     },
     requerimento: phaseContent[1] ?? "",
     objeto_delimitacao: phaseContent[2] ?? "",
-    impugna_factos: !!caseData.impugna_factos,
-    impugnacao_facto: caseData.impugna_factos ? (phaseContent[3] ?? "") : "",
+    // Use actual approved phase 3 content as source of truth, not stale caseData at generation time
+    impugna_factos: phaseContent[3] !== undefined,
+    impugnacao_facto: phaseContent[3] ?? "",
     materia_direito: phaseContent[4] ?? "",
     conclusoes: phaseContent[5] ?? "",
     data: formatDate(),
