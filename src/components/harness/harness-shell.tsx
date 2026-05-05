@@ -48,9 +48,10 @@ export interface Message {
 
 interface HarnessShellProps {
   pecaId: string;
+  isAdmin?: boolean;
 }
 
-export function HarnessShell({ pecaId }: HarnessShellProps) {
+export function HarnessShell({ pecaId, isAdmin }: HarnessShellProps) {
   const [activeTab, setActiveTab] = useState<HarnessTab>("dashboard");
   const [peca, setPeca] = useState<PecaDetail | null>(null);
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
@@ -61,14 +62,14 @@ export function HarnessShell({ pecaId }: HarnessShellProps) {
     try {
       const res = await fetch(`/api/pecas/${pecaId}`);
       if (!res.ok) {
-        setError("Peca nao encontrada.");
+        setError("Peça não encontrada.");
         setLoading(false);
         return;
       }
       const data = await res.json();
       setPeca(data);
     } catch {
-      setError("Erro ao carregar peca.");
+      setError("Erro ao carregar peça.");
     } finally {
       setLoading(false);
     }
@@ -93,8 +94,8 @@ export function HarnessShell({ pecaId }: HarnessShellProps) {
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-3rem)] items-center justify-center">
-        <span className="font-mono text-sm text-muted-foreground animate-pulse">
-          A CARREGAR OPERACAO...
+        <span className="text-sm text-muted-foreground animate-pulse">
+          A carregar peça...
         </span>
       </div>
     );
@@ -103,8 +104,8 @@ export function HarnessShell({ pecaId }: HarnessShellProps) {
   if (error || !peca) {
     return (
       <div className="flex h-[calc(100vh-3rem)] items-center justify-center">
-        <span className="font-mono text-sm text-primary">
-          {error || "ERRO: PECA NAO ENCONTRADA"}
+        <span className="text-sm text-primary">
+          {error || "Peça não encontrada"}
         </span>
       </div>
     );
@@ -112,7 +113,7 @@ export function HarnessShell({ pecaId }: HarnessShellProps) {
 
   return (
     <div className="flex h-[calc(100vh-3rem)] flex-col">
-      <HarnessTabNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <HarnessTabNav activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} />
       <div className="flex-1 overflow-hidden">
         {activeTab === "dashboard" && (
           <div className="h-full harness-animate-in">

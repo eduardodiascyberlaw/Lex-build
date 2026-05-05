@@ -22,11 +22,11 @@ export function ActiveModules({ peca }: ActiveModulesProps) {
 
   return (
     <div className="harness-panel p-3">
-      <h3 className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground mb-2">
-        MODULOS ACTIVOS
+      <h3 className="text-[0.65rem] uppercase tracking-wide text-muted-foreground mb-2">
+        Módulos activos
       </h3>
       {modules.length === 0 ? (
-        <span className="text-xs text-muted-foreground">Nenhum modulo activado.</span>
+        <span className="text-xs text-muted-foreground">Nenhum módulo activado.</span>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {modules.map((m) => (

@@ -31,7 +31,7 @@ function buildLogEntries(peca: PecaDetail): LogEntry[] {
   entries.push({
     time: formatTime(peca.createdAt),
     level: "EVT",
-    message: `Peca ${peca.type} criada — ID ${peca.id.slice(0, 8)}`,
+    message: `Peça ${peca.type} criada — ID ${peca.id.slice(0, 8)}`,
   });
 
   // Phase transitions
@@ -66,7 +66,7 @@ function buildLogEntries(peca: PecaDetail): LogEntry[] {
       entries.push({
         time: formatTime(msg.createdAt),
         level: msg.role === "user" ? "EVT" : "INFO",
-        message: `[F${msg.phase}] ${msg.role === "user" ? "MSG USER" : "RSP AGENTE"}: ${msg.content.slice(0, 60)}${msg.content.length > 60 ? "..." : ""}`,
+        message: `[Fase ${msg.phase}] ${msg.role === "user" ? "Mensagem" : "Resposta"}: ${msg.content.slice(0, 60)}${msg.content.length > 60 ? "..." : ""}`,
       });
     }
   }
@@ -81,8 +81,8 @@ export function LiveLog({ peca }: LiveLogProps) {
 
   return (
     <div className="harness-panel p-3 flex flex-col">
-      <h3 className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground mb-2">
-        LOG OPERACIONAL
+      <h3 className="text-[0.65rem] uppercase tracking-wide text-muted-foreground mb-2">
+        Histórico
       </h3>
       <div className="flex-1 overflow-y-auto max-h-48 space-y-0.5">
         {entries.length === 0 ? (

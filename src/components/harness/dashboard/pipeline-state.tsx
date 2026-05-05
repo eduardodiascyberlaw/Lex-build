@@ -11,19 +11,19 @@ interface PipelineStateProps {
 function statusBadge(status: string, isCurrentPhase: boolean) {
   switch (status) {
     case "APPROVED":
-      return <Badge variant="approved">APROVADO</Badge>;
+      return <Badge variant="approved">Aprovada</Badge>;
     case "ACTIVE":
       return (
         <Badge variant={isCurrentPhase ? "streaming" : "default"}>
-          {isCurrentPhase ? "STREAMING" : "ATIVA"}
+          {isCurrentPhase ? "A gerar..." : "Activa"}
         </Badge>
       );
     case "SKIPPED":
-      return <Badge variant="skipped">IGNORADO</Badge>;
+      return <Badge variant="skipped">Ignorada</Badge>;
     case "REJECTED":
-      return <Badge variant="destructive">REJEITADA</Badge>;
+      return <Badge variant="destructive">Rejeitada</Badge>;
     default:
-      return <Badge variant="pending">PENDENTE</Badge>;
+      return <Badge variant="pending">Pendente</Badge>;
   }
 }
 
@@ -40,8 +40,8 @@ export function PipelineState({ peca }: PipelineStateProps) {
 
   return (
     <div className="harness-panel p-3">
-      <h3 className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground mb-2">
-        ESTADO DO PIPELINE
+      <h3 className="text-[0.65rem] uppercase tracking-wide text-muted-foreground mb-2">
+        Estado das fases
       </h3>
       <div className="space-y-1.5">
         {[0, 1, 2, 3, 4, 5].map((n) => {

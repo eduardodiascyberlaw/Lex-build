@@ -17,8 +17,8 @@ const mimeLabels: Record<string, string> = {
 export function DocumentsList({ peca }: DocumentsListProps) {
   return (
     <div className="harness-panel p-3">
-      <h3 className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground mb-2">
-        DOCUMENTOS ({peca.uploads.length})
+      <h3 className="text-[0.65rem] uppercase tracking-wide text-muted-foreground mb-2">
+        Documentos ({peca.uploads.length})
       </h3>
       {peca.uploads.length === 0 ? (
         <span className="text-xs text-muted-foreground">Sem documentos.</span>

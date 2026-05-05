@@ -16,7 +16,7 @@ interface HarnessTopBarProps {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/settings", label: "Definicoes" },
+  { href: "/settings", label: "Definições" },
 ];
 
 const adminItems = [{ href: "/admin/modules", label: "Admin" }];
@@ -36,7 +36,6 @@ export function HarnessTopBar({ user }: HarnessTopBarProps) {
         </span>
         <span className="hidden sm:block font-mono text-xs tracking-wider text-muted-foreground">
           LEX BUILD <span className="text-foreground">V0.1.0</span>
-          <span className="hidden md:inline"> / Agente de Guerrilha</span>
         </span>
       </Link>
 

@@ -29,27 +29,27 @@ export function KnowledgeSummary({ peca }: KnowledgeSummaryProps) {
 
   const items = counts
     ? [
-        { label: "CORE REFS", value: counts.core },
-        { label: "LEGISLACAO", value: counts.legislation },
-        { label: "JURISPRUDENCIA", value: counts.jurisprudence },
-        { label: "DOUTRINA", value: counts.doctrine },
-        { label: "STYLE REFS", value: counts.styleRefs },
+        { label: "Núcleo", value: counts.core },
+        { label: "Legislação", value: counts.legislation },
+        { label: "Jurisprudência", value: counts.jurisprudence },
+        { label: "Doutrina", value: counts.doctrine },
+        { label: "Estilo", value: counts.styleRefs },
       ]
     : null;
 
   return (
     <div className="harness-panel p-3">
-      <h3 className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground mb-2">
-        BASE DE CONHECIMENTO
+      <h3 className="text-[0.65rem] uppercase tracking-wide text-muted-foreground mb-2">
+        Base de conhecimento
       </h3>
       {!items ? (
-        <span className="text-xs text-muted-foreground font-mono">A carregar...</span>
+        <span className="text-xs text-muted-foreground">A carregar...</span>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {items.map((item) => (
             <div key={item.label} className="text-center">
-              <div className="font-mono text-lg font-bold text-foreground">{item.value}</div>
-              <div className="font-mono text-[0.55rem] uppercase tracking-widest text-muted-foreground">
+              <div className="text-lg font-bold text-foreground">{item.value}</div>
+              <div className="text-[0.6rem] uppercase tracking-wide text-muted-foreground">
                 {item.label}
               </div>
             </div>

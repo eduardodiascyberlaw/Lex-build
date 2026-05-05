@@ -58,25 +58,20 @@ export function TabDashboard({ peca, onReload }: TabDashboardProps) {
         <Button
           variant="outline"
           size="sm"
-          className="font-mono text-xs tracking-wider"
-          onClick={handleRestart}
+          onClick={() => {
+            if (confirm("Recarregar o estado da peça?")) handleRestart();
+          }}
         >
-          RESTART AGENT
+          Recarregar
         </Button>
-        {!isCompleted && (
-          <Button
-            size="sm"
-            className="font-mono text-xs tracking-wider"
-            onClick={handleAdvancePipeline}
-          >
-            {isGeneratingDocx ? "GERAR DOCX" : "AVANCAR PIPELINE"}
+        {isGeneratingDocx && (
+          <Button size="sm" onClick={handleAdvancePipeline}>
+            Gerar documento
           </Button>
         )}
         {isCompleted && (peca as PecaDetail & { outputFilename?: string }).outputFilename && (
           <a href={`/api/pecas/${peca.id}/download`}>
-            <Button size="sm" className="font-mono text-xs tracking-wider">
-              DOWNLOAD .DOCX
-            </Button>
+            <Button size="sm">Descarregar .docx</Button>
           </a>
         )}
       </div>

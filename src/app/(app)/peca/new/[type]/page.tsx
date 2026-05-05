@@ -9,7 +9,10 @@ interface FileEntry {
   file: File;
   category: string;
   uploadProgress: number; // 0-100, -1 = error
+  isText?: boolean; // true if pasted text (not a real file)
 }
+
+const MIN_TEXT_LENGTH = 50;
 
 const CATEGORIES = [
   { value: "sentenca", label: "Sentença" },
@@ -43,6 +46,8 @@ function defaultCategory(filename: string, type: string): string {
   return "outro";
 }
 
+type InputMode = "files" | "text";
+
 export default function NewPecaPage() {
   const router = useRouter();
   const params = useParams();
@@ -51,7 +56,32 @@ export default function NewPecaPage() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
+  const [inputMode, setInputMode] = useState<InputMode>("files");
+  const [textInput, setTextInput] = useState("");
+  const [textCategory, setTextCategory] = useState<string>("outro");
+  const [textTitle, setTextTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const addTextEntry = useCallback(() => {
+    const trimmed = textInput.trim();
+    if (trimmed.length < MIN_TEXT_LENGTH) {
+      setError(`O texto deve ter pelo menos ${MIN_TEXT_LENGTH} caracteres.`);
+      return;
+    }
+    const filename =
+      (textTitle.trim() || `texto-colado-${entries.filter((e) => e.isText).length + 1}`).replace(
+        /[^\w.\-]+/g,
+        "_"
+      ) + ".txt";
+    const file = new File([trimmed], filename, { type: "text/plain" });
+    setEntries((prev) => [
+      ...prev,
+      { file, category: textCategory, uploadProgress: 0, isText: true },
+    ]);
+    setTextInput("");
+    setTextTitle("");
+    setError("");
+  }, [textInput, textTitle, textCategory, entries]);
 
   const addFiles = useCallback(
     (newFiles: File[]) => {
@@ -110,7 +140,7 @@ export default function NewPecaPage() {
 
   async function handleCreate() {
     if (entries.length === 0) {
-      setError("Carregue pelo menos um documento.");
+      setError("Carregue pelo menos um documento ou cole texto.");
       return;
     }
 
@@ -214,49 +244,148 @@ export default function NewPecaPage() {
             </div>
           )}
 
-          {/* Hidden file input */}
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={ACCEPTED_EXTS.join(",")}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          {/* Drag-drop zone */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => !uploading && inputRef.current?.click()}
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
-            } ${uploading ? "pointer-events-none opacity-60" : ""}`}
-          >
-            <svg
-              className="mb-3 h-10 w-10 text-muted-foreground"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Input mode tabs */}
+          <div className="flex gap-1 border-b border-border" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              onClick={() => setInputMode("files")}
+              disabled={uploading}
+              className={`px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                inputMode === "files"
+                  ? "border-b-2 border-primary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
-            <p className="text-sm font-medium">
-              {dragOver ? "Soltar aqui" : "Arrastar ficheiros ou clicar para selecionar"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, TXT — máx. {MAX_FILE_SIZE_MB} MB cada</p>
+              Carregar ficheiros
+            </button>
+            <button
+              type="button"
+              role="tab"
+              onClick={() => setInputMode("text")}
+              disabled={uploading}
+              className={`px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                inputMode === "text"
+                  ? "border-b-2 border-primary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Colar texto
+            </button>
           </div>
+
+          {inputMode === "files" && (
+            <>
+              {/* Hidden file input */}
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                accept={ACCEPTED_EXTS.join(",")}
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {/* Drag-drop zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => !uploading && inputRef.current?.click()}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                  dragOver
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
+                } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+              >
+                <svg
+                  className="mb-3 h-10 w-10 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <p className="text-sm font-medium">
+                  {dragOver ? "Soltar aqui" : "Arrastar ficheiros ou clicar para selecionar"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  PDF, DOCX, TXT — máx. {MAX_FILE_SIZE_MB} MB cada
+                </p>
+              </div>
+            </>
+          )}
+
+          {inputMode === "text" && (
+            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+              <p className="text-xs text-muted-foreground">
+                Cole aqui o texto da decisão administrativa, da notificação ou de outro documento.
+                O texto entra na análise como se fosse um ficheiro carregado.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Título / referência (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={textTitle}
+                    onChange={(e) => setTextTitle(e.target.value)}
+                    placeholder="Ex: sentença-1234"
+                    disabled={uploading}
+                    className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Categoria
+                  </label>
+                  <select
+                    value={textCategory}
+                    onChange={(e) => setTextCategory(e.target.value)}
+                    disabled={uploading}
+                    className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <textarea
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                rows={10}
+                disabled={uploading}
+                placeholder="Cole o texto aqui — pelo menos 50 caracteres..."
+                className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {textInput.length} caracter{textInput.length === 1 ? "" : "es"}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTextEntry}
+                  disabled={uploading || textInput.trim().length < MIN_TEXT_LENGTH}
+                >
+                  Adicionar texto
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* File list */}
           {entries.length > 0 && (
@@ -273,7 +402,14 @@ export default function NewPecaPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{entry.file.name}</p>
+                      <p className="truncate font-medium">
+                        {entry.isText && (
+                          <span className="mr-2 inline-flex rounded-sm bg-primary/10 px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-primary">
+                            texto
+                          </span>
+                        )}
+                        {entry.file.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">{formatSize(entry.file.size)}</p>
                     </div>
                     <button
