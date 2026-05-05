@@ -548,6 +548,34 @@ export function ChatMessages({
           </div>
         )}
 
+        {/* Empty-phase CTA: when phase is ACTIVE but has no content and no messages,
+            invite the user to start with a single click instead of forcing them to
+            write a directive in the input bar. */}
+        {!editMode &&
+          !streaming &&
+          messages.length === 0 &&
+          currentPhaseData &&
+          currentPhaseData.status === "ACTIVE" &&
+          !hasContent &&
+          peca.currentPhase > 0 && (
+            <div className="harness-panel p-6 text-center space-y-3 harness-animate-in">
+              <div className="text-sm text-muted-foreground">
+                Pronto para gerar a Fase {peca.currentPhase}.
+              </div>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                Pode dar instruções específicas no campo abaixo, ou clicar para gerar
+                já com as instruções padrão do agente.
+              </p>
+              <Button
+                size="lg"
+                onClick={() => sendMessage("Redige a secção conforme as instruções do agente.")}
+                disabled={streaming}
+              >
+                Gerar Fase {peca.currentPhase} agora
+              </Button>
+            </div>
+          )}
+
         {messages.map((msg, i) => (
           <div key={i} className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -557,7 +585,7 @@ export function ChatMessages({
                   msg.role === "user" ? "text-foreground" : "text-primary"
                 }`}
               >
-                {msg.role === "user" ? "OPERADOR" : "AGENTE ACPAD"}
+                {msg.role === "user" ? "Mandatário" : "Lex Build"}
               </span>
             </div>
             <div
@@ -577,7 +605,7 @@ export function ChatMessages({
             <div className="flex items-center gap-2">
               <span className="harness-timestamp">{formatTimestamp()}</span>
               <span className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-primary">
-                AGENTE ACPAD
+                Lex Build
               </span>
               <span className="h-1.5 w-1.5 rounded-full bg-harness-blue animate-pulse" />
             </div>
@@ -634,17 +662,17 @@ function ChatInputBar({ onSend, disabled, streaming }: ChatInputBarProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Insira directiva para o agente..."
+          placeholder="Escreva uma instrução ou pergunta..."
           disabled={disabled}
           rows={2}
-          className="flex-1 resize-none bg-muted border border-border rounded-sm px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          className="flex-1 resize-none bg-muted border border-border rounded-sm px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <button
           onClick={handleSendClick}
           disabled={disabled || !input.trim()}
-          className="shrink-0 h-auto px-4 bg-primary text-primary-foreground text-xs font-mono font-semibold tracking-wider rounded-sm disabled:opacity-40 hover:bg-primary/90 transition-colors"
+          className="shrink-0 h-auto px-4 bg-primary text-primary-foreground text-sm font-medium rounded-sm disabled:opacity-40 hover:bg-primary/90 transition-colors"
         >
-          {streaming ? "..." : "ENVIAR"}
+          {streaming ? "..." : "Enviar"}
         </button>
       </div>
       <div className="flex gap-4 mt-1.5 text-[0.6rem] text-muted-foreground font-mono">
