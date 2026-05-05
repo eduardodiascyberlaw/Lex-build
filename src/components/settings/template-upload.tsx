@@ -23,8 +23,9 @@ export function TemplateUpload() {
     try {
       const res = await fetch("/api/profile/template");
       if (res.ok) {
-        const data = await res.json();
-        setTemplate(data.template ?? null);
+        // Endpoint returns the template object directly (or null if none).
+        const data: TemplateInfo | null = await res.json();
+        setTemplate(data);
       }
     } catch {
       setError("Erro ao carregar template.");
@@ -55,8 +56,8 @@ export function TemplateUpload() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setTemplate(data.template);
+        const data: TemplateInfo = await res.json();
+        setTemplate(data);
         setMessage("Template carregado com sucesso.");
       } else {
         const body = await res.json();
