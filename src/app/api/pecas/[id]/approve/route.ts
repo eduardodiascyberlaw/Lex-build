@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
 import { getPhaseToStyleSection } from "@/lib/orchestrator";
+import { Prisma } from "@prisma/client";
 import { extractCaseData } from "@/lib/case-data-extractor";
 
 const logger = createLogger("api-peca-approve");
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         if (result.ok && result.caseData) {
           await tx.peca.update({
             where: { id },
-            data: { caseData: result.caseData },
+            data: { caseData: result.caseData as Prisma.InputJsonValue },
           });
           logger.info(
             { pecaId: id, strategy: result.strategy },

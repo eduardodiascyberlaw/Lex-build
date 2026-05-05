@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, errorResponse } from "@/lib/api-utils";
@@ -52,7 +53,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (local.ok && local.caseData) {
     await prisma.peca.update({
       where: { id },
-      data: { caseData: local.caseData },
+      data: { caseData: local.caseData as Prisma.InputJsonValue },
     });
     logger.info(
       { pecaId: id, strategy: local.strategy },
@@ -111,7 +112,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     await prisma.peca.update({
       where: { id },
-      data: { caseData: remote.caseData },
+      data: { caseData: remote.caseData as Prisma.InputJsonValue },
     });
 
     logger.info(
