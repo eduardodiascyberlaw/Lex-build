@@ -75,16 +75,58 @@ export function ActivePhaseCard({
         return;
       }
 
+      // Parse SSE: each event is `data: <payload>\n\n` where payload is
+      // either `[DONE]` or a JSON object `{ "text": "<chunk>" }` /
+      // `{ "error": "<msg>" }`. Concatenating the raw stream is what was
+      // showing `data: {"text":"#"}` in the UI.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      let buffer = "";
       let acc = "";
+      let streamErr: string | null = null;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        acc += chunk;
-        setStreamText(acc);
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process all complete events (separated by blank lines).
+        let sepIndex: number;
+        while ((sepIndex = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvent = buffer.slice(0, sepIndex);
+          buffer = buffer.slice(sepIndex + 2);
+
+          // Each event may have multiple lines; we only care about `data:` ones.
+          for (const line of rawEvent.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const obj = JSON.parse(payload) as { text?: string; error?: string };
+              if (obj.error) {
+                streamErr = obj.error;
+                break;
+              }
+              if (typeof obj.text === "string") {
+                acc += obj.text;
+                setStreamText(acc);
+              }
+            } catch {
+              // ignore malformed events — happens if the server flushes
+              // partial output mid-line; the next chunk will complete it.
+            }
+          }
+          if (streamErr) break;
+        }
+        if (streamErr) break;
       }
+
+      if (streamErr) {
+        setErrorMsg(streamErr);
+        setStreamText("");
+        return;
+      }
+
       onNewMessage({ role: "assistant", content: acc });
       setStreamText("");
     } catch {
