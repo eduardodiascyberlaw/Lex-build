@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PecaDetail } from "../harness-shell";
 import { Button } from "@/components/ui/button";
+import { getPhaseNames, type PecaTypeStr } from "@/lib/orchestrator";
 
 interface ChatContextSidebarProps {
   peca: PecaDetail;
@@ -19,15 +20,6 @@ interface RecentPeca {
   status: string;
   createdAt: string;
 }
-
-const PHASE_LABELS: Record<number, string> = {
-  0: "Analise documental",
-  1: "Pressupostos",
-  2: "Materia de facto",
-  3: "Tempestividade",
-  4: "Materia de direito",
-  5: "Pedidos e prova",
-};
 
 export function ChatContextSidebar({
   peca,
@@ -52,6 +44,7 @@ export function ChatContextSidebar({
     (p) => p.number === peca.currentPhase && p.status === "ACTIVE"
   );
   const hasContent = !!currentPhaseData?.content;
+  const phaseLabels = getPhaseNames(peca.type as PecaTypeStr);
 
   return (
     <div className="w-64 shrink-0 border-r border-border overflow-y-auto bg-card">
@@ -72,7 +65,7 @@ export function ChatContextSidebar({
           <div className="flex justify-between">
             <span className="text-muted-foreground">Fase</span>
             <span>
-              {peca.currentPhase} — {PHASE_LABELS[peca.currentPhase] ?? "?"}
+              {peca.currentPhase} — {phaseLabels[peca.currentPhase] ?? "?"}
             </span>
           </div>
           <div className="flex justify-between">

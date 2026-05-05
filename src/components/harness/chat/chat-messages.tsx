@@ -357,6 +357,9 @@ export function ChatMessages({
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Track which phase numbers we've already auto-started in this session,
+  // so navigating between tabs or reloads doesn't re-trigger the agent.
+  const autoStartedRef = useRef<Set<number>>(new Set());
 
   // Edit mode state
   const [editedContent, setEditedContent] = useState("");
@@ -384,6 +387,29 @@ export function ChatMessages({
       setEditError("");
     }
   }, [editMode, currentPhaseData?.content]);
+
+  // Auto-start: when a writing phase (1+) just became ACTIVE with no content
+  // and no chat history, dispatch the default directive automatically so the
+  // pipeline flows without forcing the lawyer to type a directive every time.
+  // Phase 0 stays manual — it's a conversational analysis phase.
+  useEffect(() => {
+    const phase = peca.currentPhase;
+    if (
+      phase > 0 &&
+      currentPhaseData?.status === "ACTIVE" &&
+      !hasContent &&
+      messages.length === 0 &&
+      !streaming &&
+      !editMode &&
+      !isCompleted &&
+      !autoStartedRef.current.has(phase)
+    ) {
+      autoStartedRef.current.add(phase);
+      sendMessage("Redige a secção conforme as instruções do agente.");
+    }
+    // sendMessage is stable enough — depending on the inputs that gate the auto-start
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peca.currentPhase, currentPhaseData?.status, hasContent, messages.length, streaming, editMode, isCompleted]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || streaming) return;

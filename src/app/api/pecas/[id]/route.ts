@@ -12,9 +12,23 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   try {
+    // Explicit select — never ship outputBytes (heavy bytea) to the client
+    // when listing the peca; clients fetch the binary via /download.
     const peca = await prisma.peca.findFirst({
       where: { id, userId: auth.user.id },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        type: true,
+        status: true,
+        currentPhase: true,
+        templateId: true,
+        caseData: true,
+        model: true,
+        outputFilename: true,
+        outputMimeType: true,
+        createdAt: true,
+        updatedAt: true,
         uploads: {
           select: {
             id: true,

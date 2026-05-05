@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { PecaDetail } from "./harness-shell";
 import { MetricsRow } from "./dashboard/metrics-row";
 import { CaseIdentification } from "./dashboard/case-identification";
@@ -18,6 +19,9 @@ interface TabDashboardProps {
 export function TabDashboard({ peca, onReload }: TabDashboardProps) {
   const isCompleted = peca.status === "COMPLETED";
   const isGeneratingDocx = peca.status === "GENERATING_DOCX";
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const outputFilename = (peca as PecaDetail & { outputFilename?: string }).outputFilename;
 
   async function handleRestart() {
     // Reload peca to refresh state
@@ -25,10 +29,33 @@ export function TabDashboard({ peca, onReload }: TabDashboardProps) {
   }
 
   async function handleAdvancePipeline() {
-    if (isGeneratingDocx) {
-      await fetch(`/api/pecas/${peca.id}/generate`, { method: "POST" });
+    if (!isGeneratingDocx) {
+      onReload();
+      return;
     }
-    onReload();
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch(`/api/pecas/${peca.id}/generate`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Erro a gerar documento" }));
+        setGenerateError(body.error ?? "Erro a gerar documento");
+        return;
+      }
+      // Auto-trigger the browser download once the file is persisted.
+      // Using a transient anchor avoids navigating away from the peca page.
+      const a = document.createElement("a");
+      a.href = `/api/pecas/${peca.id}/download`;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      onReload();
+    } catch {
+      setGenerateError("Erro de ligação ao gerar.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (
@@ -54,26 +81,34 @@ export function TabDashboard({ peca, onReload }: TabDashboardProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3 px-4 py-3 border-t border-border">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (confirm("Recarregar o estado da peça?")) handleRestart();
-          }}
-        >
-          Recarregar
-        </Button>
-        {isGeneratingDocx && (
-          <Button size="sm" onClick={handleAdvancePipeline}>
-            Gerar documento
+      <div className="px-4 py-3 border-t border-border space-y-2">
+        {generateError && (
+          <div className="rounded-sm border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+            {generateError}
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm("Recarregar o estado da peça?")) handleRestart();
+            }}
+            disabled={generating}
+          >
+            Recarregar
           </Button>
-        )}
-        {isCompleted && (peca as PecaDetail & { outputFilename?: string }).outputFilename && (
-          <a href={`/api/pecas/${peca.id}/download`}>
-            <Button size="sm">Descarregar .docx</Button>
-          </a>
-        )}
+          {isGeneratingDocx && (
+            <Button size="sm" onClick={handleAdvancePipeline} disabled={generating}>
+              {generating ? "A gerar documento..." : "Gerar e descarregar documento"}
+            </Button>
+          )}
+          {isCompleted && outputFilename && (
+            <a href={`/api/pecas/${peca.id}/download`} download={outputFilename}>
+              <Button size="sm">Descarregar .docx</Button>
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
