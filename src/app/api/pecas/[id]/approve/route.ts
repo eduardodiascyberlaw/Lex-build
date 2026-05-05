@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, parseBody, errorResponse } from "@/lib/api-utils";
 import { getPhaseToStyleSection } from "@/lib/orchestrator";
+import { extractCaseData } from "@/lib/case-data-extractor";
 
 const logger = createLogger("api-peca-approve");
 
@@ -95,20 +96,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         },
       });
 
-      // Phase 0: extract caseData JSON from content
+      // Phase 0: extract caseData JSON from content (multi-strategy).
       if (currentPhase === 0 && finalContent) {
-        const jsonMatch = finalContent.match(/```json\s*\n([\s\S]*?)\n```/);
-        if (jsonMatch) {
-          try {
-            const caseData = JSON.parse(jsonMatch[1]);
-            await tx.peca.update({
-              where: { id },
-              data: { caseData },
-            });
-            logger.info({ pecaId: id }, "caseData extracted from Phase 0");
-          } catch (parseErr) {
-            logger.warn({ parseErr, pecaId: id }, "Failed to parse caseData JSON from Phase 0");
-          }
+        const result = extractCaseData(finalContent);
+        if (result.ok && result.caseData) {
+          await tx.peca.update({
+            where: { id },
+            data: { caseData: result.caseData },
+          });
+          logger.info(
+            { pecaId: id, strategy: result.strategy },
+            "caseData extracted from Phase 0"
+          );
+        } else {
+          logger.warn(
+            { pecaId: id, reason: result.reason },
+            "Failed to extract caseData JSON from Phase 0 — recovery endpoint can backfill it"
+          );
         }
       }
 

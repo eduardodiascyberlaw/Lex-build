@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PecaDetail, Message } from "../harness-shell";
 import { getPhaseNames, type PecaTypeStr } from "@/lib/orchestrator";
+import { EditorialMarkdown } from "./editorial-markdown";
 
 interface ActivePhaseCardProps {
   peca: PecaDetail;
@@ -43,6 +44,8 @@ export function ActivePhaseCard({
   const [refineOpen, setRefineOpen] = useState(false);
   const [refineInput, setRefineInput] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showRecover, setShowRecover] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const autoStartedRef = useRef<Set<number>>(new Set());
 
   const tokens = (phase?.tokenInput ?? 0) + (phase?.tokenOutput ?? 0);
@@ -109,6 +112,7 @@ export function ActivePhaseCard({
 
   async function handleApprove() {
     setErrorMsg(null);
+    setShowRecover(false);
     try {
       const res = await fetch(`/api/pecas/${peca.id}/approve`, {
         method: "POST",
@@ -118,11 +122,34 @@ export function ActivePhaseCard({
       if (!res.ok) {
         const body = await res.json().catch(() => ({ error: "Erro" }));
         setErrorMsg(body.error ?? "Erro ao aprovar.");
+        if (body.code === "CASE_DATA_MISSING") setShowRecover(true);
         return;
       }
       onApproved();
     } catch {
       setErrorMsg("Erro de ligação ao aprovar.");
+    }
+  }
+
+  async function handleRecover() {
+    setRecovering(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/pecas/${peca.id}/recover-case-data`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Erro" }));
+        setErrorMsg(body.error ?? "Não foi possível reprocessar.");
+        return;
+      }
+      // Plan rebuilt — try the approve again automatically.
+      setShowRecover(false);
+      handleApprove();
+    } catch {
+      setErrorMsg("Erro de ligação ao reprocessar.");
+    } finally {
+      setRecovering(false);
     }
   }
 
@@ -147,6 +174,20 @@ export function ActivePhaseCard({
       {errorMsg && (
         <div className="mb-6 rounded-sm border border-[var(--toga)]/30 bg-[var(--toga-soft)] px-4 py-3 text-sm text-[var(--toga)]">
           {errorMsg}
+          {showRecover && (
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                onClick={handleRecover}
+                disabled={recovering}
+                className="rounded-sm bg-[var(--toga)] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 hover:bg-[var(--toga)]/90"
+              >
+                {recovering ? "A reprocessar..." : "Reprocessar análise"}
+              </button>
+              <span className="text-xs text-[var(--ink-soft)]">
+                A Fase 0 não produziu um plano estruturado. Vamos pedir ao Lex Build para refazer.
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -164,8 +205,10 @@ export function ActivePhaseCard({
       )}
 
       {showStreamSurface && (
-        <div className="editorial-body whitespace-pre-wrap">
-          {streamText || (
+        <div>
+          {streamText ? (
+            <EditorialMarkdown>{streamText}</EditorialMarkdown>
+          ) : (
             <span className="editorial-meta italic">A redigir…</span>
           )}
           <span className="editorial-caret" aria-hidden />
@@ -174,7 +217,7 @@ export function ActivePhaseCard({
 
       {showContent && (
         <>
-          <div className="editorial-body whitespace-pre-wrap">{content}</div>
+          <EditorialMarkdown>{content!}</EditorialMarkdown>
 
           <p className="mt-6 editorial-meta">
             {tokens.toLocaleString("pt-PT")} tokens · {cost}

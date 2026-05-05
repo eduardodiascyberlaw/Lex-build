@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PecaDetail, Message } from "../harness-shell";
 import { PhaseStepper } from "./phase-stepper";
 import { ActivePhaseCard } from "./active-phase-card";
+import { EditorialMarkdown } from "./editorial-markdown";
 import { getPhaseNames, type PecaTypeStr } from "@/lib/orchestrator";
 
 interface PecaShellV2Props {
@@ -270,6 +271,7 @@ function EditCanvas({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [view, setView] = useState<"edit" | "split" | "preview">("split");
 
   async function handleApprove() {
     setSaving(true);
@@ -296,9 +298,35 @@ function EditCanvas({
   }
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-12">
-      <p className="editorial-h-section">Editar etapa {peca.currentPhase}</p>
-      <h2 className="editorial-h-display mt-1">Refinar antes de aprovar</h2>
+    <article className="mx-auto max-w-6xl px-6 py-10">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <div>
+          <p className="editorial-h-section">Editar etapa {peca.currentPhase}</p>
+          <h2 className="editorial-h-display mt-1">Refinar antes de aprovar</h2>
+        </div>
+        <div className="flex items-center gap-1 rounded-sm border editorial-rule p-0.5">
+          {(
+            [
+              { id: "edit", label: "Editar" },
+              { id: "split", label: "Lado-a-lado" },
+              { id: "preview", label: "Pré-visualizar" },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setView(opt.id)}
+              className={`px-3 py-1 text-xs rounded-sm transition-colors ${
+                view === opt.id
+                  ? "bg-[var(--ink)] text-[var(--paper)]"
+                  : "text-[var(--ink-soft)] hover:text-[var(--ink)]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <p className="editorial-meta mt-2">
         Edite o texto livremente. Pode guardar a sua versão como referência de estilo —
         as próximas peças vão seguir o seu padrão.
@@ -308,13 +336,47 @@ function EditCanvas({
           {err}
         </p>
       )}
-      <textarea
-        value={editedContent}
-        onChange={(e) => setEditedContent(e.target.value)}
-        rows={20}
-        className="mt-6 w-full resize-y rounded-sm border editorial-rule bg-[var(--paper)] px-4 py-3 editorial-body focus:outline-none focus:ring-1 focus:ring-[var(--toga)]"
-      />
-      <label className="mt-3 flex items-center gap-2 text-sm text-[var(--ink-soft)]">
+
+      <div
+        className={`mt-6 grid gap-4 ${
+          view === "split" ? "lg:grid-cols-2" : "grid-cols-1"
+        }`}
+      >
+        {(view === "edit" || view === "split") && (
+          <div className="space-y-1">
+            <p className="editorial-h-section">Editor</p>
+            <textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              rows={view === "split" ? 24 : 30}
+              spellCheck
+              lang="pt-PT"
+              className="w-full resize-y rounded-sm border editorial-rule bg-[var(--paper)] px-4 py-3 text-[1rem] leading-7 focus:outline-none focus:ring-1 focus:ring-[var(--toga)]"
+              style={{
+                fontFamily: "var(--font-serif), Fraunces, serif",
+                color: "var(--ink)",
+              }}
+              placeholder="Escreva aqui. Use markdown para hierarquia: # cabeçalho, **negrito**, *itálico*, > citação."
+            />
+          </div>
+        )}
+        {(view === "preview" || view === "split") && (
+          <div className="space-y-1">
+            <p className="editorial-h-section">Pré-visualização</p>
+            <div className="rounded-sm border editorial-rule bg-[var(--paper)] px-5 py-4 min-h-[18rem]">
+              {editedContent.trim() ? (
+                <EditorialMarkdown>{editedContent}</EditorialMarkdown>
+              ) : (
+                <p className="editorial-meta italic">
+                  Sem texto para pré-visualizar.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <label className="mt-4 flex items-center gap-2 text-sm text-[var(--ink-soft)]">
         <input
           type="checkbox"
           checked={saveAsRef}
