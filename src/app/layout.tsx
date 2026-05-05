@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Fraunces, Inter_Tight } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
@@ -15,6 +15,20 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
+// Editorial Forense — serif for jurisprudential body, sans for UI chrome.
+const fraunces = Fraunces({
+  variable: "--font-serif",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  axes: ["opsz"],
+});
+
+const interTight = Inter_Tight({
+  variable: "--font-ui",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: "Lex Build",
   description: "Plataforma de geração de peças processuais com IA",
@@ -26,7 +40,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}>
+    <html
+      lang="pt"
+      className={`${plexSans.variable} ${plexMono.variable} ${fraunces.variable} ${interTight.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <SessionProvider>{children}</SessionProvider>
       </body>
