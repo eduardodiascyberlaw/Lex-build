@@ -5,11 +5,13 @@ import { join } from "path";
 import { randomUUID } from "crypto";
 import { promisify } from "util";
 import { prisma } from "@/lib/prisma";
-import { uploadToS3, getFromS3 } from "@/lib/s3";
 import { createLogger } from "@/lib/logger";
+
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 const execFileAsync = promisify(execFile);
 const logger = createLogger("docx-generator");
+const pythonBin = () => process.env.PYTHON_BIN ?? "python3";
 
 const SCRIPT_PATH = join(process.cwd(), "knowledge", "acpad", "scripts", "gerar_docx.py");
 const CAUTELAR_SCRIPT_PATH = join(
@@ -51,13 +53,21 @@ interface DocxInput {
 export async function generateDocx(input: DocxInput): Promise<string> {
   const { pecaId, userId } = input;
 
-  // Load peca with phases and user
+  // Load peca with phases and user (template bytes loaded explicitly)
   const peca = await prisma.peca.findFirstOrThrow({
     where: { id: pecaId, userId },
     include: {
       phases: { where: { status: "APPROVED" }, orderBy: { number: "asc" } },
       user: {
-        select: { name: true, cpOA: true, templates: { where: { isActive: true }, take: 1 } },
+        select: {
+          name: true,
+          cpOA: true,
+          templates: {
+            where: { isActive: true },
+            take: 1,
+            select: { id: true, bytes: true, filename: true, mimeType: true },
+          },
+        },
       },
     },
   });
@@ -141,17 +151,16 @@ export async function generateDocx(input: DocxInput): Promise<string> {
     // Write JSON
     await writeFile(jsonPath, JSON.stringify(docxData, null, 2), "utf-8");
 
-    // Download template from S3
+    // Load template from PG bytea
     const template = peca.user.templates[0];
     if (!template) {
       throw new Error("Utilizador não tem template .docx configurado. Faça upload em Definições.");
     }
-    const templateBuffer = await getFromS3(template.s3Key);
-    await writeFile(templatePath, templateBuffer);
+    await writeFile(templatePath, Buffer.from(template.bytes));
 
     // Run python script
     const { stdout, stderr } = await execFileAsync(
-      "python3",
+      pythonBin(),
       [SCRIPT_PATH, "--json", jsonPath, "--template", templatePath, "--output", outputPath],
       { timeout: 30000 }
     );
@@ -161,24 +170,23 @@ export async function generateDocx(input: DocxInput): Promise<string> {
     }
     logger.info({ stdout: stdout.trim() }, "DOCX generated");
 
-    // Read output and upload to S3
+    // Read output and persist to PG bytea
     const { readFile } = await import("fs/promises");
     const docxBuffer = await readFile(outputPath);
-    const s3Key = await uploadToS3(
-      docxBuffer,
-      `acpad_${pecaId}.docx`,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      `pecas/${pecaId}`
-    );
+    const filename = `acpad_${pecaId}.docx`;
 
-    // Update peca
     await prisma.peca.update({
       where: { id: pecaId },
-      data: { outputS3Key: s3Key, status: "COMPLETED" },
+      data: {
+        outputBytes: docxBuffer,
+        outputFilename: filename,
+        outputMimeType: DOCX_MIME,
+        status: "COMPLETED",
+      },
     });
 
-    logger.info({ pecaId, s3Key }, "DOCX uploaded and peca completed");
-    return s3Key;
+    logger.info({ pecaId, size: docxBuffer.length }, "DOCX persisted and peca completed");
+    return filename;
   } catch (err) {
     // Mark as error
     await prisma.peca.update({
@@ -273,7 +281,7 @@ async function generateCautelarDocx(pecaId: string, userId: string): Promise<str
 
     // Cautelar uses built-in template — no user template download needed
     const { stdout, stderr } = await execFileAsync(
-      "python3",
+      pythonBin(),
       [CAUTELAR_SCRIPT_PATH, "--json", jsonPath, "--output", outputPath],
       { timeout: 30000 }
     );
@@ -285,20 +293,20 @@ async function generateCautelarDocx(pecaId: string, userId: string): Promise<str
 
     const { readFile } = await import("fs/promises");
     const docxBuffer = await readFile(outputPath);
-    const s3Key = await uploadToS3(
-      docxBuffer,
-      `cautelar_${pecaId}.docx`,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      `pecas/${pecaId}`
-    );
+    const filename = `cautelar_${pecaId}.docx`;
 
     await prisma.peca.update({
       where: { id: pecaId },
-      data: { outputS3Key: s3Key, status: "COMPLETED" },
+      data: {
+        outputBytes: docxBuffer,
+        outputFilename: filename,
+        outputMimeType: DOCX_MIME,
+        status: "COMPLETED",
+      },
     });
 
-    logger.info({ pecaId, s3Key }, "CAUTELAR DOCX uploaded and peca completed");
-    return s3Key;
+    logger.info({ pecaId, size: docxBuffer.length }, "CAUTELAR DOCX persisted and peca completed");
+    return filename;
   } catch (err) {
     await prisma.peca.update({
       where: { id: pecaId },
@@ -377,7 +385,7 @@ async function generateExecucaoDocx(pecaId: string, userId: string): Promise<str
 
     // EXECUCAO uses built-in template — no user template download needed
     const { stdout, stderr } = await execFileAsync(
-      "python3",
+      pythonBin(),
       [EXECUCAO_SCRIPT_PATH, "--json", jsonPath, "--output", outputPath],
       { timeout: 30000 }
     );
@@ -389,20 +397,20 @@ async function generateExecucaoDocx(pecaId: string, userId: string): Promise<str
 
     const { readFile } = await import("fs/promises");
     const docxBuffer = await readFile(outputPath);
-    const s3Key = await uploadToS3(
-      docxBuffer,
-      `execucao_${pecaId}.docx`,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      `pecas/${pecaId}`
-    );
+    const filename = `execucao_${pecaId}.docx`;
 
     await prisma.peca.update({
       where: { id: pecaId },
-      data: { outputS3Key: s3Key, status: "COMPLETED" },
+      data: {
+        outputBytes: docxBuffer,
+        outputFilename: filename,
+        outputMimeType: DOCX_MIME,
+        status: "COMPLETED",
+      },
     });
 
-    logger.info({ pecaId, s3Key }, "EXECUCAO DOCX uploaded and peca completed");
-    return s3Key;
+    logger.info({ pecaId, size: docxBuffer.length }, "EXECUCAO DOCX persisted and peca completed");
+    return filename;
   } catch (err) {
     await prisma.peca.update({
       where: { id: pecaId },
@@ -420,6 +428,17 @@ async function generateExecucaoDocx(pecaId: string, userId: string): Promise<str
       // Ignore cleanup errors
     }
   }
+}
+
+/**
+ * Split free-form phase content into paragraphs (separated by blank lines).
+ */
+function paraSplit(content: string): string[] {
+  if (!content.trim()) return [];
+  return content
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
 }
 
 /**
@@ -493,7 +512,15 @@ async function generateRecursoDocx(pecaId: string, userId: string): Promise<stri
     include: {
       phases: { where: { status: "APPROVED" }, orderBy: { number: "asc" } },
       user: {
-        select: { name: true, cpOA: true, templates: { where: { isActive: true }, take: 1 } },
+        select: {
+          name: true,
+          cpOA: true,
+          templates: {
+            where: { isActive: true },
+            take: 1,
+            select: { id: true, bytes: true, filename: true, mimeType: true },
+          },
+        },
       },
     },
   });
@@ -511,22 +538,48 @@ async function generateRecursoDocx(pecaId: string, userId: string): Promise<stri
   }
 
   const docxData = {
-    tribunal: caseData.tribunal ?? "Tribunal Administrativo e Fiscal de Lisboa",
+    tribunal_a_quo:
+      caseData.tribunal_a_quo ?? caseData.tribunal ?? "Tribunal Administrativo e Fiscal de Lisboa",
     tribunal_ad_quem: caseData.tribunal_ad_quem ?? "Tribunal Central Administrativo Sul",
-    processo: caseData.processo ?? null,
+    processo: caseData.processo ?? "",
     jurisdicao: (caseData.jurisdicao as string) ?? "administrativa",
     recorrente: caseData.recorrente ?? { nome: "RECORRENTE", qualidade: "Autor" },
     recorrido: caseData.recorrido ?? {
       nome: "AGÊNCIA PARA A INTEGRAÇÃO, MIGRAÇÕES E ASILO, I.P.",
       qualidade: "Réu",
     },
-    requerimento: phaseContent[1] ?? "",
-    objeto_delimitacao: phaseContent[2] ?? "",
-    // Use actual approved phase 3 content as source of truth, not stale caseData at generation time
-    impugna_factos: phaseContent[3] !== undefined,
-    impugnacao_facto: phaseContent[3] ?? "",
-    materia_direito: phaseContent[4] ?? "",
-    conclusoes: phaseContent[5] ?? "",
+    requerimento: {
+      contextualizacao: paraSplit(phaseContent[1] ?? ""),
+      tipo_recurso: (caseData.tipo_recurso as string) ?? "ordinário de apelação",
+      subida: (caseData.subida as string) ?? "nos próprios autos",
+      base_legal_tipo:
+        (caseData.base_legal_tipo as string) ??
+        "art. 627.º, n.º 2, do CPC ex vi art. 140.º, n.º 3, do CPTA",
+      base_legal_subida:
+        (caseData.base_legal_subida as string) ??
+        "art. 645.º, n.º 1, alínea a), do CPC ex vi art. 140.º, n.º 3, do CPTA",
+      alegacoes_referencia:
+        (caseData.alegacoes_referencia as string) ??
+        "Em cumprimento do dever processual, seguem, junto, as alegações do recurso ora interposto.",
+      efeito: (caseData.efeito as string) ?? "devolutivo",
+      fundamentacao_efeito: (caseData.fundamentacao_efeito as string[]) ?? [],
+      juntas:
+        (caseData.juntas as string) ??
+        "Alegações, D.U.C. e comprovativo do pagamento da taxa de justiça.",
+    },
+    alegacoes: {
+      objeto_delimitacao: paraSplit(phaseContent[2] ?? ""),
+      impugnacao_facto_ativa:
+        phaseContent[3] !== undefined && Boolean(caseData.impugna_factos),
+      impugnacao_facto: paraSplit(phaseContent[3] ?? ""),
+      teses_direito: [
+        { titulo: "MATÉRIA DE DIREITO", paragrafos: paraSplit(phaseContent[4] ?? "") },
+      ],
+      conclusoes: paraSplit(phaseContent[5] ?? ""),
+    },
+    pedido_final:
+      (caseData.pedido_final as string) ??
+      "e noutros que VV. Exas. suprirão, concedendo-se a apelação e revogando-se a decisão revidenda, substituindo-se por outra que decida em conformidade, far-se-á JUSTIÇA.",
     data: formatDate(),
     advogado_nome: peca.user.name ?? "Eduardo S Dias",
     advogado_cp: peca.user.cpOA ?? "CP 59368P OA",
@@ -546,11 +599,10 @@ async function generateRecursoDocx(pecaId: string, userId: string): Promise<stri
     if (!template) {
       throw new Error("Utilizador não tem template .docx configurado. Faça upload em Definições.");
     }
-    const templateBuffer = await getFromS3(template.s3Key);
-    await writeFile(templatePath, templateBuffer);
+    await writeFile(templatePath, Buffer.from(template.bytes));
 
     const { stdout, stderr } = await execFileAsync(
-      "python3",
+      pythonBin(),
       [RECURSO_SCRIPT_PATH, "--json", jsonPath, "--template", templatePath, "--output", outputPath],
       { timeout: 30000 }
     );
@@ -560,20 +612,20 @@ async function generateRecursoDocx(pecaId: string, userId: string): Promise<stri
 
     const { readFile } = await import("fs/promises");
     const docxBuffer = await readFile(outputPath);
-    const s3Key = await uploadToS3(
-      docxBuffer,
-      `recurso_${pecaId}.docx`,
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      `pecas/${pecaId}`
-    );
+    const filename = `recurso_${pecaId}.docx`;
 
     await prisma.peca.update({
       where: { id: pecaId },
-      data: { outputS3Key: s3Key, status: "COMPLETED" },
+      data: {
+        outputBytes: docxBuffer,
+        outputFilename: filename,
+        outputMimeType: DOCX_MIME,
+        status: "COMPLETED",
+      },
     });
 
-    logger.info({ pecaId, s3Key }, "RECURSO DOCX uploaded and peca completed");
-    return s3Key;
+    logger.info({ pecaId, size: docxBuffer.length }, "RECURSO DOCX persisted and peca completed");
+    return filename;
   } catch (err) {
     await prisma.peca.update({
       where: { id: pecaId },

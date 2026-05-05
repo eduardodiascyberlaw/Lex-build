@@ -166,13 +166,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
       } else if (pecaType === "RECURSO") {
         // RECURSO: skip phase 3 if impugna_factos not active
-        if (currentPhase === 2 && !caseDataForSkip?.impugna_factos) {
-          await tx.phase.create({
-            data: { pecaId: id, number: 3, status: "SKIPPED" },
-          });
-          nextStatus = "PHASE_4_ACTIVE";
-          nextPhase = 4;
-          resolvedNextPhase = 4;
+        if (currentPhase === 2) {
+          if (!caseDataForSkip) {
+            throw new Error("caseData não disponível — reprocesse a Fase 0");
+          }
+          if (!caseDataForSkip.impugna_factos) {
+            await tx.phase.create({
+              data: { pecaId: id, number: 3, status: "SKIPPED" },
+            });
+            nextStatus = "PHASE_4_ACTIVE";
+            nextPhase = 4;
+            resolvedNextPhase = 4;
+          }
         }
       } else {
         // ACPAD: skip phase 3 if tempestividade not active

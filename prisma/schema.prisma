@@ -40,7 +40,9 @@ model Template {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   name      String
-  s3Key     String
+  bytes     Bytes
+  filename  String
+  mimeType  String   @default("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 }
@@ -57,7 +59,9 @@ model Peca {
   templateId   String?
   caseData     Json?
   model        String
-  outputS3Key  String?
+  outputBytes    Bytes?
+  outputFilename String?
+  outputMimeType String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -98,8 +102,9 @@ model PecaUpload {
   pecaId      String
   peca        Peca     @relation(fields: [pecaId], references: [id])
   filename    String
-  s3Key       String
+  bytes       Bytes
   mimeType    String
+  size        Int      @default(0)
   category    String?
   textContent String?  @db.Text
   createdAt   DateTime @default(now())

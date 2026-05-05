@@ -31,11 +31,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    const s3Key = await generateDocx({ pecaId: id, userId: auth.user.id });
+    const filename = await generateDocx({ pecaId: id, userId: auth.user.id });
 
-    logger.info({ userId: auth.user.id, pecaId: id, s3Key }, "DOCX generation triggered");
+    logger.info({ userId: auth.user.id, pecaId: id, filename }, "DOCX generation triggered");
 
-    return NextResponse.json({ success: true, s3Key });
+    return NextResponse.json({ success: true, filename });
   } catch (err) {
     logger.error({ err, pecaId: id }, "Failed to generate DOCX");
     return errorResponse("Erro na geracao do documento", 500, "GENERATION_ERROR");

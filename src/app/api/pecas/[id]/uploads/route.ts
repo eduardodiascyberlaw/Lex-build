@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, errorResponse } from "@/lib/api-utils";
-import { uploadToS3 } from "@/lib/s3";
 import { extractText } from "@/lib/extract";
 
 const logger = createLogger("api-uploads");
@@ -54,18 +53,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to S3
-    const s3Key = await uploadToS3(buffer, file.name, file.type, `pecas/${id}`);
-
     // Extract text
     const textContent = await extractText(buffer, file.type, file.name);
 
-    // Save record
+    // Save record (PG bytea storage)
     const upload = await prisma.pecaUpload.create({
       data: {
         pecaId: id,
         filename: file.name,
-        s3Key,
+        bytes: buffer,
+        size: buffer.byteLength,
         mimeType: file.type,
         category,
         textContent,
@@ -74,6 +71,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         id: true,
         filename: true,
         mimeType: true,
+        size: true,
         createdAt: true,
       },
     });

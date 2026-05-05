@@ -72,7 +72,7 @@ export function TabDashboard({ peca, onReload }: TabDashboardProps) {
             {isGeneratingDocx ? "GERAR DOCX" : "AVANCAR PIPELINE"}
           </Button>
         )}
-        {isCompleted && (peca as PecaDetail & { outputS3Key?: string }).outputS3Key && (
+        {isCompleted && (peca as PecaDetail & { outputFilename?: string }).outputFilename && (
           <a href={`/api/pecas/${peca.id}/download`}>
             <Button size="sm" className="font-mono text-xs tracking-wider">
               DOWNLOAD .DOCX

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, errorResponse } from "@/lib/api-utils";
-import { uploadToS3 } from "@/lib/s3";
-
 const logger = createLogger("api-profile-template");
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -35,10 +33,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to S3
-    const s3Key = await uploadToS3(buffer, file.name, DOCX_MIME, `templates/${auth.user.id}`);
-
-    // Deactivate old templates, create new one
+    // Deactivate old templates, create new one (PG bytea storage)
     const template = await prisma.$transaction(async (tx) => {
       await tx.template.updateMany({
         where: { userId: auth.user.id, isActive: true },
@@ -49,9 +44,12 @@ export async function POST(req: NextRequest) {
         data: {
           userId: auth.user.id,
           name: file.name,
-          s3Key,
+          bytes: buffer,
+          filename: file.name,
+          mimeType: DOCX_MIME,
           isActive: true,
         },
+        select: { id: true, name: true, isActive: true, createdAt: true },
       });
     });
 
