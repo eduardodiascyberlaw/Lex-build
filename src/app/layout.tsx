@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono, Fraunces, Inter_Tight } from "next/font/google";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -41,10 +42,33 @@ export default function RootLayout({
   return (
     <html
       lang="pt"
-      className={`${plexSans.variable} ${plexMono.variable} ${fraunces.variable} ${interTight.variable} h-full antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} ${fraunces.variable} ${interTight.variable} h-full antialiased dark`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Anti-FOUC: apply persisted theme before hydration so the user
+            never sees the wrong palette flash on load. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var t = localStorage.getItem('lexbuild-theme');
+                  if (t !== 'dark' && t !== 'light') t = 'dark';
+                  var html = document.documentElement;
+                  html.classList.remove('dark', 'light');
+                  html.classList.add(t);
+                  html.style.colorScheme = t;
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
-        <SessionProvider>{children}</SessionProvider>
+        <ThemeProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

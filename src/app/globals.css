@@ -62,7 +62,7 @@
 }
 
 :root {
-  /* Guerrilha Juridica — always dark */
+  /* Default = dark (Guerrilha Juridica). Light mode opt-in via .light class. */
   --background: #0a0a0c;
   --foreground: #e8e0d0;
   --card: #12121a;
@@ -101,9 +101,8 @@
   --harness-red: #c0392b;
   --harness-blue: #3498db;
 
-  /* Editorial Forense — paper & ink (works against the dark base via overlays).
-     The peça surface (and only the peça surface) opts into these tokens
-     to give the lawyer a calm, readable canvas. */
+  /* Editorial Forense — light variant (used inside the peça canvas regardless
+     of theme, because writing surfaces benefit from paper). */
   --paper: hsl(38 28% 96%);
   --paper-deep: hsl(38 18% 91%);
   --ink: hsl(220 30% 12%);
@@ -113,6 +112,41 @@
   --toga: hsl(355 52% 32%);
   --toga-soft: hsl(355 45% 92%);
   --gold: hsl(40 65% 45%);
+}
+
+/* Light theme — opt-in via class on <html>. Editorial paper across the app. */
+.light {
+  --background: hsl(38 28% 96%);          /* same as paper */
+  --foreground: hsl(220 30% 12%);          /* same as ink */
+  --card: hsl(38 22% 93%);
+  --card-foreground: hsl(220 30% 12%);
+  --popover: hsl(38 28% 97%);
+  --popover-foreground: hsl(220 30% 12%);
+  --primary: hsl(355 52% 32%);             /* toga */
+  --primary-foreground: hsl(38 28% 97%);
+  --secondary: hsl(38 18% 88%);
+  --secondary-foreground: hsl(220 30% 12%);
+  --muted: hsl(38 18% 91%);
+  --muted-foreground: hsl(220 18% 38%);
+  --accent: hsl(38 18% 88%);
+  --accent-foreground: hsl(220 30% 12%);
+  --destructive: hsl(355 65% 40%);
+  --border: hsl(38 14% 82%);               /* rule */
+  --input: hsl(38 14% 82%);
+  --ring: hsl(355 52% 32%);
+  --sidebar: hsl(38 22% 93%);
+  --sidebar-foreground: hsl(220 30% 12%);
+  --sidebar-primary: hsl(355 52% 32%);
+  --sidebar-primary-foreground: hsl(38 28% 97%);
+  --sidebar-accent: hsl(38 18% 88%);
+  --sidebar-accent-foreground: hsl(220 30% 12%);
+  --sidebar-border: hsl(38 14% 82%);
+  --sidebar-ring: hsl(355 52% 32%);
+  /* Harness tokens harmonised for light */
+  --harness-green: hsl(150 55% 32%);
+  --harness-amber: hsl(35 78% 42%);
+  --harness-red: hsl(355 60% 38%);
+  --harness-blue: hsl(212 60% 38%);
 }
 
 @layer base {
