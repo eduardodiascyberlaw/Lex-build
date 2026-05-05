@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, errorResponse } from "@/lib/api-utils";
+import { assertBlobSize, BlobTooLargeError } from "@/lib/blob-storage";
 const logger = createLogger("api-profile-template");
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -32,6 +33,16 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Authoritative size check (don't trust client-reported file.size).
+    try {
+      assertBlobSize(buffer, MAX_FILE_SIZE);
+    } catch (err) {
+      if (err instanceof BlobTooLargeError) {
+        return errorResponse("Ficheiro excede 10 MB", 400, "FILE_TOO_LARGE");
+      }
+      throw err;
+    }
 
     // Deactivate old templates, create new one (PG bytea storage)
     const template = await prisma.$transaction(async (tx) => {

@@ -35,58 +35,64 @@ const TEMPLATE_SOURCE = join(
 const OUTPUT_PATH = "D:/tmp/recurso-test.docx";
 
 const FASE_1_REQUERIMENTO = `
-JOÃO MANUEL DA SILVA, recorrente nos autos à margem identificados, vem, nos termos e ao abrigo do disposto nos arts. 140.º, n.º 1, alínea a) e 144.º do Código de Processo nos Tribunais Administrativos (CPTA), interpor
+Exmo. Senhor
+Juiz do Tribunal Administrativo e Fiscal de Lisboa
 
-RECURSO DE APELAÇÃO
+Processo n.º 1234/25.0BELSB
 
-para o Tribunal Central Administrativo Sul, da douta sentença proferida em 12 de janeiro de 2026, que julgou improcedente a ação intentada contra a AGÊNCIA PARA A INTEGRAÇÃO, MIGRAÇÕES E ASILO, I.P. (AIMA), o que faz nos termos e com os fundamentos seguintes.
+JOÃO MANUEL DA SILVA, Autor nos autos à margem referenciados, notificado da sentença proferida nestes autos em 14 de janeiro de 2026, pela qual foi julgada improcedente a ação e mantido o indeferimento da autorização de residência requerida junto da Agência para a Integração, Migrações e Asilo, I.P. (AIMA), vem interpor
 
-O presente recurso é tempestivo, nos termos do art. 144.º, n.º 1 do CPTA, tendo a sentença sido notificada ao recorrente em 14 de janeiro de 2026 e o presente requerimento sido apresentado dentro do prazo legal de trinta dias.
+RECURSO
 
-A sentença recorrida violou as regras de direito aplicáveis, designadamente o disposto nos arts. 121.º e 153.º do Código do Procedimento Administrativo (CPA), e art. 268.º, n.º 4 da Constituição da República Portuguesa.
+nos termos e com os fundamentos seguintes:
+
+Não se conformando com a decisão proferida, por entender que a sentença recorrida incorre em erro de direito ao validar um ato administrativo que padece de insuficiência de fundamentação, nos termos dos artigos 152.º e 153.º do Código do Procedimento Administrativo e do artigo 268.º, n.º 4, da Constituição da República Portuguesa, o Recorrente interpõe o presente recurso.
+
+O presente recurso é um recurso ordinário de apelação, nos termos do artigo 140.º, n.º 1, do CPTA, com aplicação subsidiária dos artigos 627.º e 644.º, n.º 1, alínea a), do CPC, dirigido ao Tribunal Central Administrativo Sul, enquanto tribunal ad quem competente.
+
+O recurso sobe nos próprios autos, por se tratar de sentença final proferida em primeira instância, em conformidade com o disposto no artigo 147.º, n.º 1, do CPTA e no artigo 645.º, n.º 1, alínea a), do CPC.
+
+Quanto à tempestividade, a sentença foi notificada ao Recorrente em 14 de janeiro de 2026, e o presente requerimento é apresentado em 12 de fevereiro de 2026, dentro do prazo de 30 dias previsto no artigo 144.º, n.º 1, do CPTA.
+
+Em cumprimento do disposto no artigo 144.º, n.º 2, do CPTA, seguem, em anexo, as alegações do recurso ora interposto.
+
+Ao presente recurso deve ser atribuído efeito devolutivo, nos termos do artigo 143.º do CPTA.
 `.trim();
 
 const FASE_2_OBJETO = `
-1.º
-O presente recurso tem por objeto a impugnação da sentença proferida pelo Tribunal Administrativo e Fiscal de Lisboa, na parte em que julgou improcedente o pedido de anulação do ato administrativo que indeferiu a concessão de autorização de residência ao recorrente.
+1.º O presente recurso tem por objeto a sentença proferida pelo Tribunal Administrativo e Fiscal, que julgou improcedente a ação administrativa intentada por João Manuel da Silva contra a Agência para a Integração, Migrações e Asilo (doravante AIMA), mantendo o ato de indeferimento da autorização de residência que esta entidade havia praticado. É dessa decisão que ora se recorre para esse Venerando Tribunal.
 
-2.º
-O recorrente delimita o objeto do recurso à reapreciação da matéria de direito, sustentando que a sentença recorrida fez errada interpretação e aplicação dos arts. 121.º e 153.º do CPA, no que respeita à fundamentação do ato administrativo impugnado.
+2.º Visou o recorrente, em primeira instância, obter a anulação do ato administrativo pelo qual a AIMA indeferiu o pedido de autorização de residência, invocando, para o efeito, a nulidade ou a anulabilidade do mesmo por insuficiência de fundamentação, nos termos dos artigos 152.º e 153.º do Código do Procedimento Administrativo e do artigo 268.º, n.º 4, da Constituição da República Portuguesa. O Tribunal a quo, porém, julgou improcedente esse pedido, entendendo, em síntese, que o ato impugnado cumpria os requisitos legais de fundamentação exigíveis.
 
-3.º
-Não se impugna a matéria de facto fixada em primeira instância, aceitando-se integralmente o probatório constante da sentença recorrida.
+3.º O presente recurso circunscreve-se inteiramente à matéria de direito. O recorrente aceita a matéria de facto dada como provada e não provada pelo douto Tribunal de primeira instância, não impugnando o probatório fixado na sentença recorrida. As questões submetidas à apreciação de VV. Exas. são exclusivamente jurídicas.
 
-4.º
-A questão a decidir circunscreve-se a saber se a fundamentação aduzida pelo ato impugnado preenche os requisitos legais de suficiência, clareza e congruência exigidos pelos arts. 152.º e 153.º do CPA.
+4.º A questão central que o recurso coloca é a de saber se a sentença revidenda errou ao qualificar como suficientemente fundamentado o ato administrativo praticado pela AIMA. O recorrente entende que o Tribunal a quo, com a devida vénia, interpretou de forma incorreta os requisitos de fundamentação consagrados nos artigos 152.º e 153.º do CPA, e que essa interpretação afronta o direito fundamental à fundamentação dos atos administrativos lesivos, consagrado no artigo 268.º, n.º 4, da Constituição.
+
+5.º Nos termos do disposto no artigo 635.º, n.º 4, do Código de Processo Civil, aplicável subsidiariamente por força do artigo 140.º, n.º 3, do CPTA, o objeto do presente recurso fica delimitado às questões enunciadas, sendo as demais, incluindo as que não foram objeto de impugnação pelo recorrente, consideradas aceites nos seus precisos termos.
 `.trim();
 
 const FASE_4_DIREITO = `
-5.º
-A fundamentação do ato administrativo constitui requisito essencial à sua validade, nos termos do art. 152.º do CPA, pelo que a sua falta ou insuficiência determina a anulabilidade do ato, conforme decorre do art. 163.º do mesmo Código.
+5.º O Tribunal a quo, ao concluir pela suficiência da fundamentação constante do ato impugnado, incorreu em erro de interpretação e aplicação do direito, porquanto desconsiderou o padrão normativo que os artigos 152.º e 153.º do Código do Procedimento Administrativo e o artigo 268.º, n.º 3, da Constituição da República Portuguesa impõem como condição de validade dos atos administrativos restritivos de direitos. A decisão revidenda limitou-se a afirmar que a indicação da norma habilitante bastava para fundamentar o indeferimento da autorização de residência, sem ponderar se essa remissão normativa, desacompanhada de qualquer subsunção factual, satisfaz a exigência constitucional e legal de revelação do iter decisório do órgão administrativo. Salvo o devido respeito, tal entendimento não pode ser sufragado.
 
-6.º
-O dever de fundamentação radica na exigência de transparência da actuação administrativa e visa permitir ao destinatário do acto compreender as razões de facto e de direito que conduziram à decisão, possibilitando-lhe o exercício efetivo do direito de impugnação, conforme estatui o art. 268.º, n.º 4 da Constituição da República Portuguesa.
+6.º O ato de indeferimento objeto dos presentes autos limita-se a invocar genericamente a alínea f) do n.º 1 do artigo 134.º da Lei n.º 23/2007, de 4 de julho, sem que em parte alguma do texto decisório se identifiquem os factos concretos que o órgão administrativo considerou verificados, a valoração jurídica que deles fez, nem a razão pela qual esses factos se enquadram na previsão da referida alínea. Não há qualquer menção ao percurso de vida do Recorrente, às condições familiares, ao tempo de permanência em território nacional, nem a qualquer circunstância individualizante. O ato é, na prática, uma fórmula estereotipada que poderia ser aposta a qualquer indeferimento do mesmo tipo, o que demonstra, à saciedade, que a motivação formal existe mas a fundamentação substancial está ausente.
 
-7.º
-No caso concreto, o ato impugnado limita-se a invocar genericamente a alínea f) do n.º 1 do art. 134.º da Lei n.º 23/2007, de 4 de julho, sem identificar os factos concretos que constituíriam o pressuposto da sua aplicação, omitindo o nexo entre a previsão legal e a situação individual do recorrente.
+7.º A distinção entre ausência formal e insuficiência substancial de fundamentação não tem, nesta matéria, a relevância que o Tribunal a quo lhe atribuiu, porquanto a jurisprudência do Supremo Tribunal Administrativo consolidou o entendimento de que a fundamentação insuficiente equivale, para efeitos de invalidade, à falta de fundamentação. Com efeito, o STA, em acórdão de 14 de março de 2018, proferido no processo n.º 0123/17, enunciou que a fundamentação que não permite ao destinatário conhecer as razões concretas da decisão, reconstituindo o iter lógico do decisor, é juridicamente inexistente, por não cumprir a função para que foi exigida. No mesmo sentido pronunciou-se o STA em acórdão de 22 de novembro de 2016, processo n.º 0987/15, ao afirmar que a menção da norma habilitante, desacompanhada de qualquer enunciação factual, não constitui fundamentação válida, tratando-se de simples aparência de motivação. A sentença revidenda não considerou esta linha jurisprudencial, razão pela qual a sua conclusão não encontra apoio na ordem jurídica vigente.
 
-8.º
-Tal modo de fundamentar o ato é equivalente, em termos jurídicos, à sua falta, conforme jurisprudência consolidada do Supremo Tribunal Administrativo, nomeadamente no acórdão de 14 de março de 2018, processo n.º 0123/17, em que se firmou o entendimento de que a remissão para preceitos legais sem subsunção dos factos não satisfaz o dever de fundamentação.
+8.º O artigo 153.º do CPA é, a este propósito, inequívoco: a fundamentação deve ser expressa, clara, suficiente e congruente, devendo conter a enunciação das razões de facto e de direito que determinaram a decisão, bem como a ponderação dos interesses públicos e privados em presença, nos termos do artigo 152.º, n.º 1, do mesmo Código. A exigência não é meramente formal, tendo conteúdo substantivo que o Tribunal Constitucional densificou ao declarar que a garantia constitucional prevista no artigo 268.º, n.º 3, da CRP impõe que o cidadão possa conhecer os motivos específicos que levaram a Administração a decidir de determinado modo, de forma a poder sindicar a decisão, designadamente pela via jurisdicional. Um ato que se limita a citar a norma que abstractamente autorizaria o indeferimento, sem demonstrar que os pressupostos dessa norma se encontram preenchidos no caso concreto, impede essa sindicância e viola, por conseguinte, um direito fundamental de natureza análoga aos direitos liberdades e garantias.
 
-9.º
-A sentença recorrida, ao concluir pela suficiência da fundamentação, fez errada aplicação do direito aos factos provados, devendo, por essa razão, ser revogada e substituída por decisão que anule o ato administrativo impugnado.
+9.º A consequência jurídica da fundamentação inexistente ou substancialmente insuficiente é a anulabilidade do ato nos termos do artigo 163.º, n.º 1, do CPA, que comina com essa forma de invalidade os atos praticados em violação de lei. Decorre da conjugação das normas invocadas que o ato de indeferimento da autorização de residência padece de vício gerador de anulabilidade, devendo ser anulado com as inerentes consequências repristinatórias. A sentença recorrida, ao validar um ato nessas condições, fez errada aplicação do direito aos factos provados, incorrendo no erro de julgamento que motiva o presente recurso. Cabe a esse Venerando Tribunal revogar a decisão revidenda e, em substituição, declarar a ilegalidade do ato impugnado por insuficiência de fundamentação, com as consequências legais daí decorrentes, nomeadamente a anulação do ato e a condenação da entidade demandada à nova apreciação do pedido com fundamentação bastante.
 `.trim();
 
 const FASE_5_CONCLUSOES = `
-a) O presente recurso é tempestivo, tendo o recorrente cumprido o prazo legal de trinta dias previsto no art. 144.º, n.º 1 do CPTA;
+I. O presente recurso tem por objeto a sentença proferida pelo Tribunal a quo que julgou improcedente a ação, mantendo o ato administrativo impugnado, cujo fundamento essencial assenta numa errada aplicação das normas que regem o dever de fundamentação dos atos administrativos.
 
-b) A sentença recorrida violou os arts. 152.º e 153.º do CPA, ao considerar suficiente uma fundamentação que se limitou à invocação genérica de preceito legal, sem identificação dos factos concretos;
+II. O ato administrativo sub judice padece de insuficiência de fundamentação, pois o seu conteúdo não permite ao destinatário reconstruir o iter cognoscitivo e valorativo que conduziu à decisão, em violação do disposto nos arts. 152.º e 153.º do CPA.
 
-c) A insuficiência de fundamentação equivale à sua falta, determinando a anulabilidade do ato administrativo nos termos do art. 163.º do CPA;
+III. A jurisprudência consolidada dos Tribunais Centrais Administrativos equipara a fundamentação insuficiente à falta de fundamentação para efeitos de invalidade, devendo o vício ser qualificado como anulabilidade nos termos do art. 163.º do CPA; a sentença recorrida desconsiderou este enquadramento, incorrendo em errada subsunção jurídica.
 
-d) Em consequência, deve a sentença recorrida ser revogada e substituída por decisão que anule o ato administrativo impugnado, com as legais consequências.
+IV. O direito constitucionalmente garantido à fundamentação dos atos administrativos lesivos, consagrado no art. 268.º n.º 4 da CRP, foi violado pelo ato impugnado, e a sentença revidenda, ao manter tal ato na ordem jurídica, perpetuou a lesão desse direito fundamental de caráter procedimental.
 
-Termos em que requer a V. Exas. se dignem julgar o presente recurso procedente, revogando a sentença recorrida e ordenando a anulação do ato administrativo impugnado.
+V. A decisão recorrida errou no julgamento de direito ao não decretar a anulação do ato com fundamento no vício de forma que inquina a fundamentação, impondo-se a sua revogação e substituição por outra que reconheça a invalidade e ordene a anulação do ato.
 `.trim();
 
 async function main() {

@@ -53,7 +53,17 @@ interface DocxInput {
 export async function generateDocx(input: DocxInput): Promise<string> {
   const { pecaId, userId } = input;
 
-  // Load peca with phases and user (template bytes loaded explicitly)
+  // Cheap dispatch query first — avoids loading template bytes for types that don't need user template (CAUTELAR/EXECUCAO).
+  const dispatch = await prisma.peca.findFirstOrThrow({
+    where: { id: pecaId, userId },
+    select: { type: true },
+  });
+
+  if (dispatch.type === "CAUTELAR") return generateCautelarDocx(pecaId, userId);
+  if (dispatch.type === "EXECUCAO") return generateExecucaoDocx(pecaId, userId);
+  if (dispatch.type === "RECURSO") return generateRecursoDocx(pecaId, userId);
+
+  // ACPAD path — needs phases + user template bytes.
   const peca = await prisma.peca.findFirstOrThrow({
     where: { id: pecaId, userId },
     include: {
@@ -71,21 +81,6 @@ export async function generateDocx(input: DocxInput): Promise<string> {
       },
     },
   });
-
-  // Dispatch CAUTELAR to dedicated generator
-  if (peca.type === "CAUTELAR") {
-    return generateCautelarDocx(pecaId, userId);
-  }
-
-  // Dispatch EXECUCAO to dedicated generator
-  if (peca.type === "EXECUCAO") {
-    return generateExecucaoDocx(pecaId, userId);
-  }
-
-  // Dispatch RECURSO to dedicated generator
-  if (peca.type === "RECURSO") {
-    return generateRecursoDocx(pecaId, userId);
-  }
 
   const caseData = peca.caseData as Record<string, unknown> | null;
   if (!caseData) {

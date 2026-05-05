@@ -65,6 +65,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse("Fase não está ativa", 400, "PHASE_NOT_ACTIVE");
     }
 
+    // D1: validate caseData prerequisite BEFORE the transaction so a missing
+    // caseData doesn't roll back the phase approval. Phase 0 itself is
+    // exempt — caseData is only created when Phase 0 is approved.
+    if (currentPhase === 2 && !peca.caseData) {
+      logger.warn({ pecaId: id, type: peca.type }, "approve blocked: caseData missing");
+      return errorResponse(
+        "caseData não disponível — reprocesse a Fase 0",
+        409,
+        "CASE_DATA_MISSING"
+      );
+    }
+
     const isEdited = !!data.editedContent;
     const finalContent = data.editedContent ?? phase.content;
 
@@ -165,19 +177,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           resolvedNextPhase = 4;
         }
       } else if (pecaType === "RECURSO") {
-        // RECURSO: skip phase 3 if impugna_factos not active
-        if (currentPhase === 2) {
-          if (!caseDataForSkip) {
-            throw new Error("caseData não disponível — reprocesse a Fase 0");
-          }
-          if (!caseDataForSkip.impugna_factos) {
-            await tx.phase.create({
-              data: { pecaId: id, number: 3, status: "SKIPPED" },
-            });
-            nextStatus = "PHASE_4_ACTIVE";
-            nextPhase = 4;
-            resolvedNextPhase = 4;
-          }
+        // RECURSO: skip phase 3 if impugna_factos not active.
+        // caseDataForSkip is guaranteed non-null here — validated before the transaction (D1).
+        if (currentPhase === 2 && !caseDataForSkip?.impugna_factos) {
+          await tx.phase.create({
+            data: { pecaId: id, number: 3, status: "SKIPPED" },
+          });
+          nextStatus = "PHASE_4_ACTIVE";
+          nextPhase = 4;
+          resolvedNextPhase = 4;
         }
       } else {
         // ACPAD: skip phase 3 if tempestividade not active

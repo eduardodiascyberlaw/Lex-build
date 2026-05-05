@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { requireAuth, errorResponse } from "@/lib/api-utils";
 import { extractText } from "@/lib/extract";
+import { assertBlobSize, BlobTooLargeError } from "@/lib/blob-storage";
 
 const logger = createLogger("api-uploads");
 
@@ -52,6 +53,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Authoritative size check (don't trust client-reported file.size).
+    try {
+      assertBlobSize(buffer, MAX_FILE_SIZE);
+    } catch (err) {
+      if (err instanceof BlobTooLargeError) {
+        return errorResponse("Ficheiro excede 20 MB", 400, "FILE_TOO_LARGE");
+      }
+      throw err;
+    }
 
     // Extract text
     const textContent = await extractText(buffer, file.type, file.name);

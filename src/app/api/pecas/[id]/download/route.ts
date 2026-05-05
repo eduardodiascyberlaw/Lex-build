@@ -33,7 +33,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const buffer = Buffer.from(peca.outputBytes);
-    const filename = peca.outputFilename ?? `${peca.type.toLowerCase()}_${id}.docx`;
+    const rawFilename = peca.outputFilename ?? `${peca.type.toLowerCase()}_${id}.docx`;
+    // Sanitize for Content-Disposition: strip CR/LF/quote/backslash that could
+    // inject HTTP headers or break the quoted filename token.
+    const filename = rawFilename.replace(/[\r\n"\\]/g, "_");
 
     logger.info({ userId: auth.user.id, pecaId: id }, "DOCX downloaded");
 

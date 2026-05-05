@@ -45,6 +45,8 @@ model Template {
   mimeType  String   @default("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@index([userId, isActive])
 }
 
 // ─── PEÇAS PROCESSUAIS ───
