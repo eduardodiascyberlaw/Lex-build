@@ -20,7 +20,6 @@ const fraunces = Fraunces({
   variable: "--font-serif",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
-  axes: ["opsz"],
 });
 
 const interTight = Inter_Tight({
